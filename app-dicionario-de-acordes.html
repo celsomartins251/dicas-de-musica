@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dicionário de Acordes</title>
+    <style>
+        :root {
+            --primary-color: #ecf0f1;
+            --accent-color: #e67e22;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #splashScreen {
+            position:fixed; inset:0; z-index:99999; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; text-align:center; padding:24px;
+            background:radial-gradient(ellipse at center, #282018 0%, #121212 62%, #090909 100%);
+            opacity:1; visibility:visible; transition:opacity .45s ease, visibility .45s ease;
+        }
+        #splashScreen.is-hidden { opacity:0; visibility:hidden; pointer-events:none; }
+        .splash-logo { width:156px; height:156px; margin-bottom:22px; filter:drop-shadow(0 12px 22px #0009); animation:logo-rise .75s ease both; }
+        .splash-title { margin:0; color:#f5ead8; font-size:clamp(1.7rem,5vw,2.5rem); letter-spacing:.02em; }
+        .splash-subtitle { margin:10px 0 24px; color:#c7a776; font-size:.95rem; letter-spacing:.12em; text-transform:uppercase; }
+        .splash-loader { width:130px; height:3px; background:#403326; border-radius:9px; overflow:hidden; }
+        .splash-loader span { display:block; width:35%; height:100%; background:linear-gradient(90deg,#d6802b,#ffd47f); border-radius:9px; animation:load-line 1.6s ease-in-out infinite; }
+        @keyframes logo-rise { from { opacity:0; transform:translateY(12px) scale(.94); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes load-line { from { transform:translateX(-110%); } to { transform:translateX(390%); } }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: #b0b0b0;
+            margin-bottom: 25px;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid #333;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        select {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            font-size: 1rem;
+            outline: none;
+            background: #2c2c2c;
+            color: #ffffff;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* Seção do Braço Realista de 17 Trastes */
+        .fretboard-section {
+            background: var(--card-bg);
+            padding: 18px 18px 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #333;
+        }
+
+        .fretboard-title {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .fretboard-container {
+            width: 100%;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            padding: 6px 0 0;
+        }
+
+        .fretboard-svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+        }
+
+        .barre-legend {
+            max-width: 1200px;
+            width: 100%;
+            margin: -16px 0 18px;
+            color: #b0b0b0;
+            font-size: 0.85rem;
+        }
+        .barre-legend .mark {
+            display: inline-block;
+            width: 25px;
+            height: 5px;
+            margin: 0 7px 2px 0;
+            border-radius: 4px;
+            background: #e74c3c;
+        }
+
+        #chords-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .chord-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: 2px solid #333;
+        }
+
+        .chord-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+            border-color: var(--accent-color);
+        }
+
+        .chord-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .chord-root-info {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .chord-symbol {
+            margin-top: 8px;
+            color: #ef5350;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-align: center;
+        }
+
+        .chord-notes { color:#ffc15b; font-size:.78rem; margin:0 0 6px; letter-spacing:.03em; text-align:center; }
+
+        .card-svg {
+            width: 130px;
+            height: 160px;
+        }
+        .triad-section {
+            display:none;
+            width:100%;
+            max-width:1200px;
+            margin:22px auto 28px;
+            padding:18px;
+            background:var(--card-bg);
+            border:1px solid #333;
+            border-radius:12px;
+        }
+        .triad-section.visible { display:block; }
+        .triad-section h2 { margin:0 0 5px; font-size:1.2rem; color:var(--primary-color); }
+        .triad-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+        .triad-quality label { display:block; margin-bottom:4px; color:#bbb; font-size:.78rem; }
+        .triad-quality select { padding:8px 11px; font-size:.92rem; }
+        .triad-note { margin:0 0 15px; color:#aaa; font-size:.88rem; }
+        .triad-grid { display:flex; gap:12px; overflow-x:auto; padding:2px 2px 10px; scroll-snap-type:x mandatory; }
+        .triad-card { flex:0 0 min(86vw,460px); min-width:0; padding:12px 8px; text-align:center; background:#171717; border:1px solid #363636; border-radius:10px; scroll-snap-align:start; }
+        .triad-card h3 { margin:0 0 3px; font-size:.98rem; color:#ffc15b; }
+        .triad-card p { margin:0 0 6px; color:#aaa; font-size:.78rem; }
+        .triad-svg { width:100%; height:auto; max-width:100%; }
+        .chord-card.selected { border-color:#ffc15b; box-shadow:0 0 0 2px #ffc15b44; }
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .fretboard-section { padding: 14px 8px; }
+            .fretboard-svg { min-width: 760px; }
+            #chords-container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; }
+            .chord-card { padding:12px 7px; }
+            .chord-title { font-size:1rem; }
+            .chord-root-info { font-size:.72rem; }
+            .chord-symbol { font-size:.98rem; }
+            .triad-card { flex-basis: 88vw; }
+        }
+    </style>
+</head>
+<body>
+    <div id="splashScreen" role="status" aria-label="Dicionário de Acordes">
+        <svg class="splash-logo" viewBox="0 0 220 220" aria-hidden="true">
+            <defs><linearGradient id="pickGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd27c"/><stop offset="1" stop-color="#bd681f"/></linearGradient></defs>
+            <path d="M110 13 C151 14 185 42 184 82 C183 127 144 183 110 207 C76 183 37 127 36 82 C35 42 69 14 110 13Z" fill="#21180f" stroke="url(#pickGold)" stroke-width="6"/>
+            <path d="M63 61H157 M52 87H168 M48 113H172 M57 139H163 M72 165H148" stroke="#d89542" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+            <path d="M79 42V173 M91 36V184 M103 32V193 M117 32V193 M129 36V184 M141 42V173" stroke="#f1d8aa" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+            <circle cx="91" cy="87" r="8" fill="#ffd27c" stroke="#21180f" stroke-width="3"/>
+            <circle cx="117" cy="113" r="8" fill="#ffd27c" stroke="#21180f" stroke-width="3"/>
+            <circle cx="129" cy="139" r="8" fill="#ffd27c" stroke="#21180f" stroke-width="3"/>
+        </svg>
+        <h2 class="splash-title">Dicionário de Acordes</h2>
+        <p class="splash-subtitle">Shapes · tríades · extensões</p>
+        <div class="splash-loader" aria-hidden="true"><span></span></div>
+    </div>
+
+    <h1>Dicionário de Acordes</h1>
+    <p class="subtitle">Mapeamento distribuído pelas regiões do braço com shapes móveis partindo da 6ª, 5ª e 4ª cordas e visualização realista em tema escuro.</p>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="rootSelect">Tônica (Fundamental):</label>
+            <select id="rootSelect">
+                <option value="C" selected>C (Dó)</option>
+                <option value="C#">C# / Db</option>
+                <option value="D">D (Ré)</option>
+                <option value="D#">D# / Eb</option>
+                <option value="E">E (Mi)</option>
+                <option value="F">F (Fá)</option>
+                <option value="F#">F# / Gb</option>
+                <option value="G">G (Sol)</option>
+                <option value="G#">G# / Ab</option>
+                <option value="A">A (Lá)</option>
+                <option value="A#">A# / Bb</option>
+                <option value="B">B (Si)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="typeSelect">Tipo de Acorde:</label>
+            <select id="typeSelect">
+                <option value="major">Maior — Tríade</option>
+                <option value="m">Menor — m</option>
+                <option value="7">Com Sétima — Dominante 7</option>
+                <option value="maj7">Sétima Maior — 7M</option>
+                <option value="maj9">Sétima Maior e Nona 7M(9)</option>
+                <option value="maj7_11">Sétima Maior e 11ª Aumentada 7M(#11)</option>
+                <option value="7_9">Dominante com Nona 7(9)</option>
+                <option value="7_b9">Dominante com Nona Bemol 7(b9)</option>
+                <option value="7_sharp9">Dominante com Nona Aumentada 7(#9)</option>
+                <option value="7sus4_9">Dominante sus4 com Nona 7sus4(9)</option>
+                <option value="7_9_sharp11">7(9 #11)</option>
+                <option value="7_b9_sharp11">7(b9 #11)</option>
+                <option value="7_13">7(13)</option>
+                <option value="7_b13">7(b13)</option>
+                <option value="m7">Menor com Sétima — m7</option>
+                <option value="m7M">Menor com Sétima Maior — m7M</option>
+                <option value="dim">Diminuto — dim</option>
+                <option value="m7b5">Meio Diminuto m7(b5)</option>
+                <option value="sus4">Sus Quarta — sus4</option>
+                <option value="6">Sexta — 6</option>
+                <option value="69">Sexta e Nona — 6/9</option>
+                <option value="major_3">Maior com baixo na 3ª</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Seção do Braço de 17 Trastes Realista -->
+    <div class="fretboard-section">
+        <div class="fretboard-title" id="fretboardTitle">Visualização Completa no Braço (17 Trastes)</div>
+        <div class="fretboard-container" id="fretboardContainer">
+            <!-- Gerado via JS -->
+        </div>
+    </div>
+
+    <div id="chords-container"></div>
+    <section id="triadSection" class="triad-section" aria-live="polite">
+        <div class="triad-heading"><h2 id="triadTitle">Tríades do shape selecionado</h2>
+            <div class="triad-quality"><label for="triadQuality">Qualidade da tríade</label>
+                <select id="triadQuality"><option value="major">Maior</option><option value="minor">Menor</option><option value="augmented">Aumentada</option><option value="diminished">Diminuta</option></select>
+            </div>
+        </div>
+        <p class="triad-note">As formas mostram a tríade em diferentes regiões do braço. R = fundamental, 3 = terça e 5 = quinta; as cordas não usadas ficam marcadas com ×.</p>
+        <div id="triadGrid" class="triad-grid"></div>
+    </section>
+    <div class="barre-legend"><span class="mark"></span>Risco vermelho: pestana (quando aplicável)</div>
+
+    <script>
+        const rootNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const stringOpenNotes = [4, 9, 2, 7, 11, 4]; // 6ª até 1ª
+
+        // Banco de acordes: frets do acorde de C (Dó). Índice 0 = 6ª corda ... 5 = 1ª corda.
+        // Todos são shapes móveis: o app apenas desloca o desenho para a tônica escolhida.
+        const chordDatabase = {
+  "major": [
+    { name: "Partindo da 6ª Corda — pestana (shape E)", baseFrets: [8,10,10,9,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape A)", baseFrets: ['x',3,5,5,5,3] },
+    { name: "Partindo da 4ª Corda — shape D", baseFrets: ['x','x',10,12,13,12] }
+  ],
+  "m": [
+    { name: "Partindo da 6ª Corda — pestana (shape Em)", baseFrets: [8,10,10,8,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape Am)", baseFrets: ['x',3,5,5,4,3] },
+    { name: "Partindo da 4ª Corda — shape Dm", baseFrets: ['x','x',10,12,13,11] }
+  ],
+  "7": [
+    { name: "Partindo da 6ª Corda — pestana (shape E7)", baseFrets: [8,10,8,9,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape A7)", baseFrets: ['x',3,5,3,5,3] },
+    { name: "Partindo da 4ª Corda — shape D7", baseFrets: ['x','x',10,12,11,12] }
+  ],
+  "maj7": [
+    { name: "Partindo da 6ª Corda — pestana (shape E7M)", baseFrets: [8,10,9,9,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape A7M)", baseFrets: ['x',3,5,4,5,3] },
+    { name: "Partindo da 4ª Corda — shape D7M", baseFrets: ['x','x',10,12,12,12] }
+  ],
+  "maj9": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',9,7,8,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,'x',4,3,3] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,12,12,10] }
+  ],
+  "maj7_11": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',9,9,7,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,'x',4,5,2] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,9,7,7] }
+  ],
+  "7_9": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,7,5,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,3,3,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',8,7,8,8] }
+  ],
+  "7_b9": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,6,5,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,3,2,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,9,11,9] }
+  ],
+  "7_sharp9": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,7,8,8,'x','x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,3,4,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,9,11,11] }
+  ],
+  "7sus4_9": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,7,6,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,3,3,3,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,10,11,10] }
+  ],
+  "7_9_sharp11": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,9,7,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,'x',3,3,2] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,11,11,10] }
+  ],
+  "7_b9_sharp11": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,6,7,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,3,2,2] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',8,6,7,8] }
+  ],
+  "7_13": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,9,10,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,5,3,5,5] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',8,9,11,8] }
+  ],
+  "7_b13": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,9,9,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,5,3,5,4] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',8,9,9,8] }
+  ],
+  "m7": [
+    { name: "Partindo da 6ª Corda — pestana (shape Em7)", baseFrets: [8,10,8,8,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape Am7)", baseFrets: ['x',3,5,3,4,3] },
+    { name: "Partindo da 4ª Corda — shape Dm7", baseFrets: ['x','x',10,12,11,11] }
+  ],
+  "m7M": [
+    { name: "Partindo da 6ª Corda — pestana", baseFrets: [8,10,9,8,8,8] },
+    { name: "Partindo da 5ª Corda — pestana", baseFrets: ['x',3,5,4,4,3] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,8,8,7] }
+  ],
+  "dim": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',7,8,7,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,4,2,4,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,11,10,11] }
+  ],
+  "m7b5": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',8,8,7,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,4,3,4,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,11,11,11] }
+  ],
+  "sus4": [
+    { name: "Partindo da 6ª Corda — pestana (shape Esus4)", baseFrets: [8,10,10,10,8,8] },
+    { name: "Partindo da 5ª Corda — pestana (shape Asus4)", baseFrets: ['x',3,5,5,6,3] },
+    { name: "Partindo da 4ª Corda — shape Dsus4", baseFrets: ['x','x',10,12,13,13] }
+  ],
+  "6": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',7,9,8,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,2,1,'x'] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,12,10,12] }
+  ],
+  "69": [
+    { name: "Partindo da 6ª Corda", baseFrets: [8,'x',7,7,8,'x'] },
+    { name: "Partindo da 5ª Corda", baseFrets: ['x',3,2,2,3,3] },
+    { name: "Partindo da 4ª Corda", baseFrets: ['x','x',10,9,10,10] }
+  ],
+  "major_3": [
+    { name: "Baixo (3ª) na 6ª Corda", baseFrets: [12,'x',10,12,13,'x'] },
+    { name: "Baixo (3ª) na 5ª Corda", baseFrets: ['x',7,5,5,8,8] },
+    { name: "Baixo (3ª) na 4ª Corda", baseFrets: ['x','x',2,0,1,0] }
+  ]
+};
+
+        // Rótulos de intervalo (semitons a partir da tônica) usados nas bolinhas e nos cards
+        const baseIntervalLabels = {0:'R',1:'b9',2:'9',3:'b3',4:'3',5:'4',6:'b5',7:'5',8:'b13',9:'13',10:'b7',11:'7'};
+        const intervalOverrides = {
+            '7_sharp9': {3:'#9'}, 'maj7_11': {6:'#11'}, '7_9_sharp11': {6:'#11'},
+            '7_b9_sharp11': {6:'#11'}, '6': {9:'6'}, '69': {9:'6'}, 'dim': {9:'bb7'}
+        };
+        function intervalLabel(type, semitones) {
+            const o = intervalOverrides[type] || {};
+            return o[semitones] ?? baseIntervalLabels[semitones];
+        }
+
+        function getCalculatedChordOptions(rootIdx, type) {
+            const definitions = chordDatabase[type] || chordDatabase["major"];
+
+            return definitions.map(def => {
+                const nums = def.baseFrets.filter(f => typeof f === 'number');
+                const minBase = Math.min(...nums), maxBase = Math.max(...nums);
+                // Desenho base = acorde de C. Desloca para a tônica escolhida na posição
+                // mais grave possível (nunca abaixo do traste 0 nem acima do 17).
+                let shift = rootIdx - 12;
+                while (minBase + shift < 0) shift += 12;
+                while (maxBase + shift > 17 && minBase + shift - 12 >= 0) shift -= 12;
+
+                const absoluteFrets = def.baseFrets.map(f => f === 'x' ? 'x' : f + shift);
+
+                // Pestana: menor casa repetida em cordas contíguas, sem corda abafada
+                // nem casa mais baixa entre os pontos da pestana.
+                const inferBarre = (frets) => {
+                    const playable = frets.map((fret, index) => ({ fret, index }))
+                        .filter(item => typeof item.fret === 'number' && item.fret > 0);
+                    if (playable.length < 2) return 0;
+                    const lowest = Math.min(...playable.map(item => item.fret));
+                    const positions = playable.filter(item => item.fret === lowest).map(item => item.index);
+                    if (positions.length < 2) return 0;
+                    const first = Math.min(...positions);
+                    const last = Math.max(...positions);
+                    for (let i = first; i <= last; i++) {
+                        if (frets[i] === 'x' || typeof frets[i] !== 'number' || frets[i] < lowest) return 0;
+                    }
+                    return lowest;
+                };
+
+                // Intervalos das notas, do grave ao agudo (para conferência rápida)
+                const labels = absoluteFrets
+                    .map((fret, i) => fret === 'x' ? null : intervalLabel(type, ((stringOpenNotes[i] + fret) - rootIdx + 120) % 12))
+                    .filter(Boolean);
+
+                return { name: def.name, frets: absoluteFrets, barre: inferBarre(absoluteFrets), labels };
+            });
+        }
+
+        function formatChordSymbol(root, type) {
+            const suffixes = {
+                "major": "", "m": "m", "7": "7", "maj7": "7M",
+                "maj9": "7M(9)", "maj7_11": "7M(#11)",
+                "7_9": "7(9)", "7_b9": "7(b9)", "7_sharp9": "7(#9)",
+                "7sus4_9": "7sus4(9)", "7_9_sharp11": "7(9 #11)",
+                "7_b9_sharp11": "7(b9 #11)",
+                "7_13": "7(13)", "7_b13": "7(b13)", "m7": "m7",
+                "dim": "dim", "m7b5": "m7(b5)",
+                "m7M": "m7M", "sus4": "sus4", "6": "6", "69": "6/9"
+            };
+            if (type === "major_3") return `${root}/${rootNotes[(rootNotes.indexOf(root) + 4) % 12]}`;
+            return `${root}${suffixes[type] ?? type}`;
+        }
+
+        function updateChordDisplay() {
+            const root = document.getElementById('rootSelect').value;
+            const type = document.getElementById('typeSelect').value;
+            const container = document.getElementById('chords-container');
+            const fretboardContainer = document.getElementById('fretboardContainer');
+            const fretboardTitle = document.getElementById('fretboardTitle');
+            
+            container.innerHTML = '';
+            const rootIdx = rootNotes.indexOf(root);
+            const invOpt = document.querySelector && document.querySelector('#typeSelect option[value="major_3"]');
+            if (invOpt) invOpt.textContent = `Maior com baixo na 3ª — ${formatChordSymbol(root, 'major_3')}`;
+            const chordOptions = getCalculatedChordOptions(rootIdx, type);
+            const primaryOption = chordOptions[0];
+            fretboardTitle.innerText = `Braço de 17 Trastes: ${chordTitle(root, type)} — ${primaryOption.name}`;
+            fretboardContainer.innerHTML = generateRealFretboardSVG(primaryOption.frets, root, primaryOption.barre, type);
+
+            chordOptions.forEach((option, index) => {
+                const card = document.createElement('div');
+                card.className = 'chord-card' + (index === 0 ? ' selected' : '');
+                const svgDrawing = generateCardSVG(option.frets, option.barre);
+                card.innerHTML = `
+                    <div class="chord-title">${chordTitle(root, type)}</div>
+                    <div class="chord-root-info">${option.name}</div>
+                    <div class="chord-notes">${option.labels.join(' · ')}</div>
+                    ${svgDrawing}
+                    <div class="chord-symbol" aria-label="Cifra do acorde">${formatChordSymbol(root, type)}</div>
+                `;
+                card.addEventListener('click', () => {
+                    container.querySelectorAll('.chord-card').forEach(item => item.classList.remove('selected'));
+                    card.classList.add('selected');
+                    fretboardTitle.innerText = `Braço de 17 Trastes: ${chordTitle(root, type)} — ${option.name}`;
+                    fretboardContainer.innerHTML = generateRealFretboardSVG(option.frets, root, option.barre, type);
+                    renderTriads(option, index, root);
+                    document.getElementById('triadSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+                container.appendChild(card);
+            });
+            renderTriads(primaryOption, 0, root);
+        }
+
+        let activeTriadSelection = null;
+
+        function triadIntervalsFor(quality) {
+            const intervals = {
+                major:[0,4,7],
+                minor:[0,3,7],
+                augmented:[0,4,8],
+                diminished:[0,3,6]
+            };
+            return intervals[quality] || intervals.major;
+        }
+
+        function renderTriads(option, shapeIndex, root) {
+            activeTriadSelection = { option, shapeIndex, root };
+            const section = document.getElementById('triadSection');
+            const grid = document.getElementById('triadGrid');
+            const title = document.getElementById('triadTitle');
+            const quality = document.getElementById('triadQuality').value;
+            const qualityNames = {major:'maior',minor:'menor',augmented:'aumentada',diminished:'diminuta'};
+            const intervals = triadIntervalsFor(quality);
+            const degreeInterval = {R:0,'3':intervals[1],'5':intervals[2]};
+            const majorDegreeInterval = {R:0,'3':4,'5':7};
+            const rootPc = rootNotes.indexOf(root);
+            const transposition = (rootPc - rootNotes.indexOf('D') + 12) % 12;
+
+            // Referências de Ré nos shapes D, E e A; a quinta forma de D foi removida.
+            // Os shapes E e A usam as quatro posições enviadas para cada um.
+            const dForms = [
+                {name:'Forma 1',strings:[3,4,5],baseFrets:[2,3,2],degrees:['5','R','3']},
+                {name:'Forma 2',strings:[2,3,4],baseFrets:[4,2,3],degrees:['3','5','R']},
+                {name:'Forma 3',strings:[1,2,3],baseFrets:[5,4,2],degrees:['R','3','5']},
+                {name:'Forma 4',strings:[0,1,2],baseFrets:[5,5,4],degrees:['5','R','3']}
+            ];
+            const eForms = [
+                {name:'Forma 1',strings:[3,4,5],baseFrets:[11,10,10],degrees:['3','5','R']},
+                {name:'Forma 2',strings:[2,3,4],baseFrets:[12,11,10],degrees:['R','3','5']},
+                {name:'Forma 3',strings:[1,2,3],baseFrets:[12,12,11],degrees:['5','R','3']},
+                {name:'Forma 4',strings:[0,1,2],baseFrets:[14,12,12],degrees:['3','5','R']}
+            ];
+            const aForms = [
+                {name:'Forma 1',strings:[3,4,5],baseFrets:[7,7,5],degrees:['R','3','5']},
+                {name:'Forma 2',strings:[2,3,4],baseFrets:[7,7,7],degrees:['5','R','3']},
+                {name:'Forma 3',strings:[1,2,3],baseFrets:[9,7,7],degrees:['3','5','R']},
+                {name:'Forma 4',strings:[0,1,2],baseFrets:[10,9,7],degrees:['R','3','5']}
+            ];
+            const forms = shapeIndex === 0 ? eForms : shapeIndex === 1 ? aForms : dForms;
+            title.textContent = `Tríades de ${root} — ${qualityNames[quality]} · ${option.name}`;
+            grid.innerHTML = forms.map(form => {
+                const frets = form.baseFrets.map((fret,i) => fret + degreeInterval[form.degrees[i]] - majorDegreeInterval[form.degrees[i]] + transposition);
+                const notes = form.degrees.map(degree => rootNotes[(rootPc + degreeInterval[degree]) % 12]);
+                const stringLabel = form.strings.map(index => `${6-index}ª`).join('–');
+                return `<article class="triad-card"><h3>${form.name}</h3><p>Cordas ${stringLabel} · notas ${notes.join('–')}</p>${drawTriadShape(frets, form.strings, form.degrees)}</article>`;
+            }).join('');
+            section.classList.add('visible');
+        }
+
+        function drawTriadShape(frets, strings, tones) {
+            const width=560,left=58,right=518,top=28,bottom=126,fretWidth=(right-left)/24;
+            const yForString=stringIndex=>top+(5-stringIndex)*(bottom-top)/5;
+            const played=new Map(strings.map((stringIndex,i)=>[stringIndex,{fret:frets[i],tone:tones[i]}]));
+            let svg=`<svg class="triad-svg" viewBox="0 0 ${width} 155" role="img" aria-label="Braço de seis cordas com o shape da tríade">`;
+            svg+=`<rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}" rx="3" fill="#181412"/>`;
+            for(let f=0;f<=24;f++){
+                const x=left+f*fretWidth;
+                svg+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="${f===0?'#ddd':'#555'}" stroke-width="${f===0?3:1}"/>`;
+            }
+            const stringWidths=[2.2,1.8,1.5,1.2,0.95,0.75];
+            for(let stringIndex=5;stringIndex>=0;stringIndex--){
+                const y=yForString(stringIndex);
+                svg+=`<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="#999" stroke-width="${stringWidths[stringIndex]}"/>`;
+                svg+=`<text x="20" y="${y+3}" fill="#aaa" font-size="8" text-anchor="middle">${6-stringIndex}ª</text>`;
+            }
+            [3,5,7,9,12,15,17,19,21,24].forEach(f=>{
+                const x=left+(f-.5)*fretWidth;
+                const midY=(yForString(2)+yForString(3))/2;
+                svg+=`<circle cx="${x}" cy="${midY}" r="2" fill="#666"/><text x="${x}" y="145" fill="#888" font-size="8" text-anchor="middle">${f}</text>`;
+            });
+            for(let stringIndex=0;stringIndex<6;stringIndex++){
+                const y=yForString(stringIndex),note=played.get(stringIndex),x=left-16;
+                if(!note){
+                    svg+=`<text x="${x}" y="${y+3.5}" fill="#e36b62" font-size="11" font-weight="bold" text-anchor="middle">×</text>`;
+                    continue;
+                }
+                const noteX=note.fret===0?x:left+(note.fret-.5)*fretWidth;
+                svg+=`<circle cx="${noteX}" cy="${y}" r="8" fill="#ffc15b" stroke="#171717" stroke-width="1.5"/><text x="${noteX}" y="${y+2.8}" fill="#171717" font-size="6.5" font-weight="bold" text-anchor="middle">${note.tone}</text>`;
+            }
+            svg+='</svg>';
+            return svg;
+        }
+
+        function generateRealFretboardSVG(absoluteFrets, rootName, barreFret = 0, type = "major") {
+            let svg = `<svg class="fretboard-svg" viewBox="0 0 990 180" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fundo escuro do braço
+            svg += `<rect x="25" y="15" width="940" height="150" fill="#181412" rx="4" />`;
+            svg += `<rect x="25" y="15" width="940" height="5" fill="#0d0a09" />`;
+            svg += `<rect x="25" y="160" width="940" height="5" fill="#0d0a09" />`;
+
+            // Marcações de trastes (bolinhas)
+            const dotFrets = [3, 5, 7, 9, 15];
+            dotFrets.forEach(f => {
+                let xCenter = 70 + f * 52 - 26;
+                svg += `<circle cx="${xCenter}" cy="100" r="6" fill="#444444" opacity="0.6" />`;
+            });
+            
+            let x12 = 70 + 12 * 52 - 26;
+            svg += `<circle cx="${x12}" cy="65" r="5" fill="#444444" opacity="0.6" />`;
+            svg += `<circle cx="${x12}" cy="135" r="5" fill="#444444" opacity="0.6" />`;
+
+            // Nut (Pestana)
+            svg += `<rect x="66" y="15" width="6" height="150" fill="#333333" stroke="#555555" stroke-width="1" />`;
+
+            // Trastes metálicos
+            for (let f = 1; f <= 17; f++) {
+                let x = 70 + f * 52;
+                svg += `<line x1="${x}" y1="15" x2="${x}" y2="165" stroke="#555555" stroke-width="2.5" />`;
+                svg += `<text x="${x - 26}" y="12" font-size="10" fill="#888888" text-anchor="middle">${f}</text>`;
+            }
+
+            // Cordas (1ª no topo, 6ª na base)
+            const stringYSpacing = 170 / 7;
+            for (let displayRow = 0; displayRow < 6; displayRow++) {
+                let y = 15 + (displayRow + 1) * stringYSpacing - (stringYSpacing / 2);
+                let thickness = 1 + displayRow * 0.45; 
+                svg += `<line x1="70" y1="${y}" x2="954" y2="${y}" stroke="#777777" stroke-width="${thickness}" />`;
+            }
+
+            // Pestana vermelha no braço virtual, cobrindo as cordas da forma
+            if (barreFret > 0) {
+                const barreStrings = absoluteFrets.map((fret, index) => fret === barreFret ? index : -1).filter(index => index >= 0);
+                if (barreStrings.length >= 2) {
+                    const displayRows = barreStrings.map(index => 5 - index);
+                    const firstRow = Math.min(...displayRows);
+                    const lastRow = Math.max(...displayRows);
+                    const yTop = 15 + (firstRow + 1) * stringYSpacing - (stringYSpacing / 2);
+                    const yBottom = 15 + (lastRow + 1) * stringYSpacing - (stringYSpacing / 2);
+                    const xBarre = 70 + (barreFret - 0.5) * 52;
+                    svg += `<rect x="${xBarre - 5}" y="${yTop - 3}" width="10" height="${yBottom - yTop + 6}" rx="5" fill="#e74c3c" opacity="0.9" />`;
+                }
+            }
+
+            // Notas no braço
+            for (let displayRow = 0; displayRow < 6; displayRow++) {
+                let guitarStringIndex = 5 - displayRow; // 0 = 6ª corda, 5 = 1ª corda
+                let fret = absoluteFrets[guitarStringIndex];
+                let y = 15 + (displayRow + 1) * stringYSpacing - (stringYSpacing / 2);
+
+                const rootIndex = rootNotes.indexOf(rootName);
+                if (fret === 'x') {
+                    svg += `<text x="35" y="${y + 4}" font-size="14" font-weight="bold" fill="#e74c3c" text-anchor="middle">×</text>`;
+                    continue;
+                }
+                const noteAtFret = (stringOpenNotes[guitarStringIndex] + fret) % 12;
+                const isRoot = (noteAtFret === rootIndex);
+                const label = intervalLabel(type, (noteAtFret - rootIndex + 12) % 12);
+                const xNota = fret === 0 ? 35 : 70 + (fret - 0.5) * 52;
+                const color = isRoot ? "#f1c40f" : "#e67e22";
+                const radius = isRoot ? 11 : 10;
+                if (fret === 0) {
+                    svg += `<circle cx="${xNota}" cy="${y}" r="9" fill="none" stroke="${isRoot ? '#f1c40f' : '#2ecc71'}" stroke-width="2" />`;
+                    svg += `<text x="${xNota}" y="${y + 3}" font-size="7.5" fill="${isRoot ? '#f1c40f' : '#2ecc71'}" font-weight="bold" text-anchor="middle">${label}</text>`;
+                } else {
+                    svg += `<circle cx="${xNota}" cy="${y}" r="${radius + 3}" fill="${color}" opacity="0.3" />`;
+                    svg += `<circle cx="${xNota}" cy="${y}" r="${radius}" fill="${color}" stroke="#121212" stroke-width="1.5" />`;
+                    svg += `<text x="${xNota}" y="${y + 3}" font-size="8" font-weight="bold" fill="#121212" text-anchor="middle">${label}</text>`;
+                }
+            }
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateCardSVG(frets, barreFret) {
+            let minFret = 1;
+            const numericFrets = frets.filter(f => typeof f === 'number' && f > 0);
+            if (numericFrets.length > 0) {
+                const max = Math.max(...numericFrets);
+                if (max > 4) {
+                    minFret = Math.min(...numericFrets);
+                }
+            }
+
+            let svg = `<svg class="card-svg" viewBox="0 0 130 160">`;
+            
+            if (minFret === 1) {
+                svg += `<rect x="25" y="30" width="80" height="4" fill="#444" />`;
+            } else {
+                svg += `<text x="12" y="48" font-size="11" font-weight="bold" fill="#aaa">${minFret}º</text>`;
+                svg += `<line x1="25" y1="30" x2="105" y2="30" stroke="#444" stroke-width="2" />`;
+            }
+
+            for (let i = 0; i < 6; i++) {
+                let x = 25 + i * 16;
+                svg += `<line x1="${x}" y1="30" x2="${x}" y2="130" stroke="#555" stroke-width="1.5" />`;
+            }
+
+            for (let f = 0; f <= 5; f++) {
+                let y = 30 + f * 20;
+                svg += `<line x1="25" y1="${y}" x2="105" y2="${y}" stroke="#333" stroke-width="1" />`;
+            }
+
+            if (barreFret > 0 && barreFret >= minFret && barreFret <= minFret + 4) {
+                let barreY = 30 + (barreFret - minFret + 1) * 20 - 10;
+                const barreStrings = frets.map((fret, index) => fret === barreFret ? index : -1).filter(index => index >= 0);
+                if (barreStrings.length >= 2) {
+                    const firstX = 25 + Math.min(...barreStrings) * 16 - 5;
+                    const lastX = 25 + Math.max(...barreStrings) * 16 + 5;
+                    svg += `<rect x="${firstX}" y="${barreY - 4}" width="${lastX - firstX}" height="8" rx="4" fill="#e74c3c" opacity="0.95" />`;
+                }
+            }
+
+            frets.forEach((fret, index) => {
+                let x = 25 + index * 16;
+                if (fret === 'x') {
+                    svg += `<text x="${x}" y="22" font-size="11" font-weight="bold" text-anchor="middle" fill="#e74c3c">×</text>`;
+                } else if (fret === 0) {
+                    svg += `<circle cx="${x}" cy="20" r="4" fill="none" stroke="#2ecc71" stroke-width="2" />`;
+                } else {
+                    let relativeGridFret = fret - minFret + 1;
+                    if (relativeGridFret >= 1 && relativeGridFret <= 5) {
+                        let y = 30 + (relativeGridFret * 20) - 10;
+                        svg += `<circle cx="${x}" cy="${y}" r="6" fill="#e67e22" />`;
+                    }
+                }
+            });
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function chordTitle(root, type) {
+            return ["7_13","7_b13","7_9_sharp11","7_b9_sharp11"].includes(type) ? formatChordSymbol(root, type) : `${root} ${formatTypeName(type)}`;
+        }
+
+        function formatTypeName(type) {
+            const names = {
+                "major": "Maior",
+                "m": "Menor",
+                "7": "Com Sétima — Dominante 7",
+                "maj7": "Sétima Maior — 7M",
+                "maj9": "Sétima Maior e Nona 7M(9)",
+                "maj7_11": "Sétima Maior e 11ª Aumentada 7M(#11)",
+                "7_9": "Dominante com Nona 7(9)",
+                "7_b9": "Dominante com Nona Bemol 7(b9)",
+                "7_sharp9": "Dominante com Nona Aumentada 7(#9)",
+                "7sus4_9": "Dominante sus4 com Nona 7sus4(9)",
+                "7_9_sharp11": "7(9 #11)",
+                "7_b9_sharp11": "7(b9 #11)",
+                "7_13": "7(13)",
+                "7_b13": "7(b13)",
+                "m7": "Menor com Sétima — m7",
+                "dim": "Diminuto — dim",
+                "m7b5": "Meio Diminuto m7(b5)",
+                "m7M": "Menor com Sétima Maior — m7M",
+                "major_3": "Maior com baixo na 3ª",
+                "sus4": "Sus Quarta — sus4",
+                "6": "Sexta — 6",
+                "69": "Sexta e Nona — 6/9"
+            };
+            return names[type] || type;
+        }
+
+        document.getElementById('rootSelect').addEventListener('change', updateChordDisplay);
+        document.getElementById('typeSelect').addEventListener('change', updateChordDisplay);
+        document.getElementById('triadQuality').addEventListener('change', () => {
+            if (activeTriadSelection) renderTriads(activeTriadSelection.option, activeTriadSelection.shapeIndex, activeTriadSelection.root);
+        });
+        updateChordDisplay();
+        window.setTimeout(() => document.getElementById('splashScreen').classList.add('is-hidden'), 1900);
+    </script>
+</body>
+</html>
