@@ -401,4 +401,65 @@ $('edDelete').onclick=()=>{
 };
 
 $('bpm').oninput=e=>{$('bpmout').textContent=String(e.target.value)};$('bpm').onchange=e=>commitBpm(e.target.value);$('minus').onclick=()=>commitBpm(bpm-1);$('plus').onclick=()=>commitBpm(bpm+1);$('play').onclick=play;$('stop').onclick=()=>stop();$('loop').onclick=()=>{if(looping){looping=false;let elapsed=ctx&&running?ctx.currentTime-startAt:0;if(running&&readingSeconds>0&&elapsed>=cycleSeconds){loopDisabledAt=ctx.currentTime;loopPhaseAtDisable=(elapsed-countInSeconds)%readingSeconds;loopFinishAt=loopDisabledAt+(readingSeconds-loopPhaseAtDisable)}else{loopDisabledAt=0;loopPhaseAtDisable=0;loopFinishAt=0}$('loop').setAttribute('aria-pressed','false');$('loop').textContent='↻ Loop desligado';$('loop').classList.remove('loopOn');if(clickSource)clickSource.loop=false;if(chordSource)chordSource.loop=false}else{looping=true;loopDisabledAt=0;loopPhaseAtDisable=0;loopFinishAt=0;$('loop').setAttribute('aria-pressed','true');$('loop').textContent='↻ Loop ligado';$('loop').classList.add('loopOn');if(clickSource)clickSource.loop=true;if(chordSource)chordSource.loop=true}};$('prevBar').onclick=()=>focusBar(activeBar<0?0:activeBar-1);$('nextBar').onclick=()=>focusBar(activeBar<0?1:activeBar+1);$('openReader').onclick=openReader;$('readerClose').onclick=closeReader;$('readerPrev').onclick=()=>renderReaderBar(readerIndex-1);$('readerNext').onclick=()=>renderReaderBar(readerIndex+1);$('readerDialog').addEventListener('click',e=>{if(e.target===$('readerDialog'))closeReader()});$('readerDialog').addEventListener('close',()=>{try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})}catch(e){}});$('levelSelect').onchange=()=>{if(!confirmDiscard()){$('levelSelect').value=lastLevel;return}closeEditorSilently();stop('Exercício alterado — pronto para tocar');lastLevel=$('levelSelect').value;lastIndex=0;fillExerciseSelect()};$('exerciseSelect').onchange=()=>{if(!confirmDiscard()){$('exerciseSelect').value=String(lastIndex);return}closeEditorSilently();stop('Exercício alterado — pronto para tocar');lastIndex=Number($('exerciseSelect').value);loadExercise(lastIndex)};setBpm(60);fillExerciseSelect();
-</script></body></html>
+</script><script type="module">
+/* Envio de exercícios do professor para os alunos (Firebase). Sem login, o aplicativo funciona como antes. */
+import {firebaseConfig} from './firebase-config.js';
+(async()=>{
+try{
+if(!firebaseConfig||!firebaseConfig.apiKey)return;
+const G='https://www.gstatic.com/firebasejs/10.12.2/';
+const A=await import(G+'firebase-app.js'),Au=await import(G+'firebase-auth.js'),Fs=await import(G+'firebase-firestore.js');
+const app=A.initializeApp(firebaseConfig),auth=Au.getAuth(app),db=Fs.getFirestore(app);
+const APP_URL=new URL('app-leitura-ritmica.html',location.href).href;
+function labelProf(){if($('levelSelect').value!=='professor'||!currentExercise)return;$('exerciseMeta').textContent='Do professor · Compasso '+currentExercise.sig+' · '+meterDescription(currentExercise.meter)}
+['levelSelect','exerciseSelect'].forEach(id=>$(id).addEventListener('change',labelProf));
+function resetExtras(){const r=$('edSendRow');if(r)r.remove();const o=[...$('levelSelect').options].find(x=>x.value==='professor');if(o)o.remove();delete CATALOG.professor}
+async function setupTeacher(){
+ const snap=await Fs.getDocs(Fs.collection(db,'students'));
+ const list=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+ const box=document.createElement('div');box.className='edRow';box.id='edSendRow';
+ box.innerHTML='<div class="field grow"><label for="edSendTo">Enviar este exercício ao aluno</label><select id="edSendTo"></select></div><button id="edSend" type="button">📤 Enviar ao aluno</button>';
+ $('edSave').parentElement.insertAdjacentElement('afterend',box);
+ const sel=$('edSendTo'),msg=t=>{$('edMsg').textContent=t};
+ sel.add(new Option('Escolha o aluno…',''));
+ list.forEach(s=>sel.add(new Option((s.name||s.email||'Aluno')+(s.active===false?' (bloqueado)':''),s.id)));
+ if(list.length>1)sel.add(new Option('Todos os alunos ativos','*'));
+ $('edSend').onclick=async()=>{
+  const v=sel.value;
+  if(!v){msg('Escolha o aluno que vai receber o exercício.');return}
+  if(!draft){msg('Monte o exercício no editor antes de enviar.');return}
+  const m=METERS[draft.sig];
+  for(let i=0;i<draft.bars.length;i++){const b=draft.bars[i];if(!b.free&&barUnits(b)!==m.units){msg('O compasso '+(i+1)+' está incompleto. Complete o ritmo antes de enviar.');return}}
+  const data={title:(draft.title||'').trim()||'Exercício sem nome',sig:draft.sig,bars:JSON.parse(JSON.stringify(draft.bars))};
+  const targets=v==='*'?list.filter(s=>s.active!==false):list.filter(s=>s.id===v);
+  if(!targets.length){msg('Nenhum aluno ativo para receber.');return}
+  $('edSend').disabled=true;msg('Enviando…');
+  try{
+   for(const s of targets)await Fs.addDoc(Fs.collection(db,'students',s.id,'materials'),{type:'Exercício',title:data.title,description:'Exercício de leitura rítmica · compasso '+data.sig+' · '+data.bars.length+' compassos',content:'',url:APP_URL,exerciseJson:JSON.stringify(data),createdAt:Fs.serverTimestamp()});
+   msg(targets.length===1?'Enviado para '+(targets[0].name||'o aluno')+'.':'Enviado para '+targets.length+' alunos.')
+  }catch(e){console.error(e);msg('Não foi possível enviar. Confira se você entrou como professor.')}
+  $('edSend').disabled=false
+ }
+}
+async function setupStudent(uid){
+ const snap=await Fs.getDocs(Fs.collection(db,'students',uid,'materials'));
+ const items=snap.docs.map(d=>d.data()).filter(x=>x&&typeof x.exerciseJson==='string').sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
+ const ok=[];
+ items.forEach(x=>{try{const d=JSON.parse(x.exerciseJson);if(d&&METERS[d.sig]&&Array.isArray(d.bars)&&d.bars.length)ok.push(d)}catch(e){}});
+ if(!ok.length)return;
+ CATALOG.professor=ok.map(d=>materializeDraft(d,'professor'));
+ const sel=$('levelSelect');let opt=[...sel.options].find(o=>o.value==='professor');
+ if(!opt){opt=new Option('','professor');sel.add(opt,sel.options[1]||null)}
+ opt.textContent='Do professor — '+ok.length;
+ if(sel.value==='original'&&!edOpen()){sel.value='professor';lastLevel='professor';lastIndex=0;fillExerciseSelect();labelProf()}
+}
+let done=null;
+Au.onAuthStateChanged(auth,async u=>{
+ if(!u||done===u.uid)return;
+ done=u.uid;resetExtras();
+ try{const t=await Fs.getDoc(Fs.doc(db,'teachers',u.uid));if(t.exists())await setupTeacher();else await setupStudent(u.uid)}catch(e){console.error(e)}
+});
+}catch(e){console.error(e)}
+})();
+</script>
+</body></html>
