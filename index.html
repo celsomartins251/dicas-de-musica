@@ -71,7 +71,8 @@ const err=m=>{$('loginError').textContent=m};
 const byTime=(a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0);
 async function loadApps(){const s=await F.getDocs(F.collection(fs,'apps'));db.apps=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0))}
 async function loadNotes(){try{const s=await F.getDocs(F.collection(fs,'teacher_notes'));db.notes=s.docs.map(d=>({id:d.id,...d.data()})).sort(byTime)}catch(e){console.error('teacher_notes:',e);db.notes=[]}}
-async function loadTeacher(){await loadApps();await loadLogs();await loadNotes();const s=await F.getDocs(F.collection(fs,'students'));db.students=await Promise.all(s.docs.map(async d=>{const m=await F.getDocs(F.collection(fs,'students',d.id,'materials'));return{id:d.id,...d.data(),materials:m.docs.map(x=>({id:x.id,...x.data()})).sort(byTime)}}));db.students.sort((a,b)=>(a.name||'').localeCompare(b.name||''))}
+async function loadLibSilent(){try{const s=await F.getDocs(F.collection(fs,'teacher_library'));lib=s.docs.map(d=>({id:d.id,...d.data()})).sort(byTime)}catch(x){console.error('teacher_library:',x);lib=[]}}
+async function loadTeacher(){await loadApps();await loadLogs();await loadNotes();await loadLibSilent();const s=await F.getDocs(F.collection(fs,'students'));db.students=await Promise.all(s.docs.map(async d=>{const m=await F.getDocs(F.collection(fs,'students',d.id,'materials'));return{id:d.id,...d.data(),materials:m.docs.map(x=>({id:x.id,...x.data()})).sort(byTime)}}));db.students.sort((a,b)=>(a.name||'').localeCompare(b.name||''))}
 async function loadLogs(){const q=F.query(F.collection(fs,'logs'),F.orderBy('createdAt','desc'),F.limit(30));const r=await F.getDocs(q);db.logs=r.docs.map(d=>d.data())}
 function renderLogs(){const h=$('logList');if(!h)return;const L=db.logs||[];h.innerHTML=L.length?L.map(l=>`<div class="material-row"><div><strong>${esc(l.name||'Aluno')}</strong><small>${l.createdAt?new Date(l.createdAt.seconds*1000).toLocaleString('pt-BR'):''} · ${l.type==='app'?'Abriu: '+esc(l.app||''):'Entrou na área'}</small></div></div>`).join(''):'<div class="empty">Nenhum acesso registrado ainda.</div>'}
 async function logAccess(type,st,app){try{await F.addDoc(F.collection(fs,'logs'),{uid:auth.currentUser.uid,name:st.name||'',type,app:app||'',createdAt:F.serverTimestamp()})}catch(e){}}
@@ -131,9 +132,9 @@ async function releaseLibPage(sid,nid){const n=lib.find(x=>x.id===nid),s=db.stud
     if(/gabarito/i.test(page.textContent)){alert('Esta página ainda contém gabarito e não foi liberada, por segurança.');return}
     const styles=[...doc.querySelectorAll('style')].map(x=>x.outerHTML).join('');
     const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+esc(title)+'</title>'+styles+'</head><body>'+page.outerHTML+'</body></html>';
-    const parts=Math.ceil(html.length/CHUNK);
+    const HC=300000,parts=Math.ceil(html.length/HC);
     const ref=await F.addDoc(F.collection(fs,'students',sid,'materials'),{type:'Página de livro',title,description:'',content:'',url:'',anchor,parts,createdAt:F.serverTimestamp()});
-    for(let i=0;i<parts;i++)await F.setDoc(F.doc(fs,'students',sid,'materials',ref.id,'htmlparts',String(i).padStart(4,'0')),{i,data:html.slice(i*CHUNK,(i+1)*CHUNK)});
+    for(let i=0;i<parts;i++)await F.setDoc(F.doc(fs,'students',sid,'materials',ref.id,'htmlparts',String(i).padStart(4,'0')),{i,data:html.slice(i*HC,(i+1)*HC)});
     await refresh()
   })}
 function renderLib(){const h=$('libList');h.innerHTML=lib.length?lib.map(i=>`<div class="material-row"><div><span class="pill">${i.kind==='pdf'?'PDF':'HTML'}</span><strong>${esc(i.title)}</strong><small>${esc(i.fileName||'')} · ${(i.size/1048576).toFixed(1)} MB</small></div><div class="row-actions"><button class="btn small gold" type="button" data-open-lib="${esc(i.id)}">Abrir</button><button class="btn small danger" type="button" data-del-lib="${esc(i.id)}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum arquivo na biblioteca ainda.</div>';h.querySelectorAll('[data-open-lib]').forEach(b=>b.onclick=()=>openLib(b.dataset.openLib));h.querySelectorAll('[data-del-lib]').forEach(b=>b.onclick=()=>delLib(b.dataset.delLib))}
