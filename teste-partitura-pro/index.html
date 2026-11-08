@@ -263,7 +263,7 @@ B.forEach(k=>{k.w=k.x1-k.x0;k.h=k.y1-k.y0;k.cx=(k.x0+k.x1)/2;k.cy=(k.y0+k.y1)/2;
 // Detecta a cabeça X antes da classificação de cabeças ovais: dois traços diagonais curtos que se cruzam.
 const xHeads=[];for(let i=0;i<B.length;i++){const a=B[i];if(a.u||a.w<.35*s||a.h<.35*s||a.w>2.2*s||a.h>2.2*s||a.len<.45*s)continue;const ap=a.p[0],az=a.p[a.p.length-1],as=(az[1]-ap[1])/((az[0]-ap[0])||1);if(Math.abs(as)<.35||Math.abs(as)>3.5)continue;for(let j=i+1;j<B.length;j++){const b=B[j];if(b.u||b.w<.35*s||b.h<.35*s||b.w>2.2*s||b.h>2.2*s||b.len<.45*s)continue;const bp=b.p[0],bz=b.p[b.p.length-1],bs=(bz[1]-bp[1])/((bz[0]-bp[0])||1);if(as*bs>-.12||Math.abs(as-bs)<.7)continue;const cx=(a.cx+b.cx)/2,cy=(a.cy+b.cy)/2;if(Math.abs(a.cx-b.cx)>.65*s||Math.abs(a.cy-b.cy)>.65*s)continue;const mm=mAt(cx,cy);if(mm<0)continue;a.u=b.u=1;a.k=b.k='X';B.forEach(q=>{if(q!==a&&q!==b&&!q.u&&q.cx>=Math.min(a.x0,b.x0)-.45*s&&q.cx<=Math.max(a.x1,b.x1)+.45*s&&q.cy>=Math.min(a.y0,b.y0)-.45*s&&q.cy<=Math.max(a.y1,b.y1)+.45*s){q.u=1;q.k='X'}});xHeads.push({t:'n',x:{x0:Math.min(a.x0,b.x0),x1:Math.max(a.x1,b.x1),y0:Math.min(a.y0,b.y0),y1:Math.max(a.y1,b.y1),w:Math.max(a.x1,b.x1)-Math.min(a.x0,b.x0),h:Math.max(a.y1,b.y1)-Math.min(a.y0,b.y0),cx,cy},base:1,xnote:1});break}}
 const H=B.filter(k=>k.k=='H'),St=B.filter(k=>k.k=='S'),D=B.filter(k=>k.k=='D'),O=B.filter(k=>k.k=='O'),out=[...xHeads];
-O.filter(o=>o.w>=1.5*s&&o.h<=.45*o.w).sort((p,q)=>q.w-p.w).forEach(b=>{const a=b.p[0],z=b.p[b.p.length-1],sl=(z[1]-a[1])/((z[0]-a[0])||1);if(Math.abs(sl)>.6)return;const at=St.filter(t=>{const yb=a[1]+(t.cx-a[0])*sl;return t.cx>=b.x0-1.1*s&&t.cx<=b.x1+1.1*s&&(Math.abs(t.y0-yb)<2.25*s||Math.abs(t.y1-yb)<2.25*s)});if(at.length>=2){b.u=1;const span=Math.max(1,b.x1-b.x0);const level=b.h<=.8*s?1:(b.len>2.35*span?3:b.len>1.35*span?2:1);at.forEach(t=>{t.bm=Math.min(3,(t.bm||0)+level);if(!t.gp)t.gp=b})}});
+O.filter(o=>o.w>=1.05*s&&o.h<=.45*o.w).sort((p,q)=>q.w-p.w).forEach(b=>{const a=b.p[0],z=b.p[b.p.length-1],sl=(z[1]-a[1])/((z[0]-a[0])||1);if(Math.abs(sl)>.6)return;const at=St.filter(t=>{const yb=a[1]+(t.cx-a[0])*sl;return t.cx>=b.x0-.35*s&&t.cx<=b.x1+.35*s&&(Math.abs(t.y0-yb)<.72*s||Math.abs(t.y1-yb)<.72*s)});if(at.length){b.u=1;at.forEach(t=>{t.bm=Math.min(3,(t.bm||0)+1);if(at.length>=2&&!t.gp)t.gp=b})}});
 H.sort((a,c)=>a.cx-c.cx).forEach(h=>{
 const dist=t=>Math.min(Math.abs(t.cx-h.x1),Math.abs(t.cx-h.x0));
 const t=St.filter(t=>!t.u&&t.x0<=h.x1+.6*s&&t.x1>=h.x0-.6*s&&t.y0<=h.y1+.6*s&&t.y1>=h.y0-.6*s).sort((a,c)=>dist(a)-dist(c))[0];let fl=0;
@@ -302,7 +302,7 @@ if(count&&g.h>.25*s&&g.h<5*s){
   const centerError=Math.abs(g.cx-(group[0].x.cx+group[count-1].x.cx)/2);
   if(sameBar&&same&&span<16*s&&centerError<Math.max(3.5*s,span*.48)&&
      gaps.every(v=>v>.30*s&&v<5.5*s)&&
-     group.every(n=>Math.abs(n.x.cy-group[0].x.cy)<2.8*s)){
+     group.every(n=>Math.abs(n.x.cy-group[0].x.cy)<4.2*s)){
    const tg=tupleSeq++;
    if(group.every(n=>n.existing)){
     const originals=group.map(n=>n.existing),m=originals[0].m,base=group[0].base;
