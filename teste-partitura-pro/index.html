@@ -1,0 +1,579 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Partitura Pro</title>
+<style>
+:root{color-scheme:dark;--bg:#111113;--p:#1a1a1d;--p2:#242428;--g:#d4af37;--t:#ececec;--m:#8d8d94;--l:#2f2f35;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--t);font:13px system-ui,sans-serif;overflow:hidden}
+#app{display:flex;height:100%}#side{width:236px;background:var(--p);border-right:1px solid var(--l);display:flex;flex-direction:column;transition:width .2s;overflow:hidden;flex:none}#side.c{width:46px}
+.tab{display:flex;align-items:center;gap:10px;height:34px;padding:0 15px;color:var(--m);cursor:pointer;border-left:2px solid transparent;white-space:nowrap;user-select:none}.tab b{width:16px;text-align:center;font-weight:400}.tab.on{color:var(--g);border-color:var(--g);background:#ffffff08}#mn{color:var(--g);height:44px}
+.pan{display:none;padding:10px 12px;overflow:auto;flex:1;border-top:1px solid var(--l);min-width:236px}.pan.on{display:block}#side.c .pan{display:none}
+.b{background:var(--p2);color:var(--t);border:1px solid var(--l);border-radius:6px;padding:6px 9px;min-height:34px;font:inherit;cursor:pointer;margin:0 4px 6px 0}.b.on{border-color:var(--g);color:var(--g)}.b:active{background:#333}.b{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+label{display:block;color:var(--m);margin:8px 0 2px}label.r{display:flex;gap:8px;align-items:center}input[type=range]{width:100%;accent-color:var(--g)}
+input[type=text],input[type=number],select{width:100%;background:var(--p2);color:var(--t);border:1px solid var(--l);border-radius:6px;padding:7px;font:inherit}
+.h{color:var(--m);line-height:1.45;font-size:12px}h4{margin:12px 0 6px;color:var(--g);font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}#bar{display:flex;gap:6px;align-items:center;padding:6px 10px;background:var(--p);border-bottom:1px solid var(--l);flex-wrap:wrap}#bar .b{margin:0}
+#wrap{flex:1;overflow:auto;position:relative;background:#17171b;-webkit-overflow-scrolling:touch}#cv{position:relative}#cv canvas{position:absolute;left:0;top:0}#ik{touch-action:none;cursor:crosshair}
+#ph{position:absolute;width:2px;background:#d4af37cc;pointer-events:none;display:none}.palette{display:none;position:absolute;z-index:7;top:48px;left:8px;max-width:min(420px,calc(100vw - 20px));max-height:calc(100% - 100px);overflow:auto;padding:9px;background:#1a1a1df5;border:1px solid var(--g);border-radius:8px;box-shadow:0 4px 18px #000b}.palette.show{display:block}.palette .b{min-width:54px}.palette small{display:block;color:var(--m);margin:2px 2px 8px}.palette .b.on{background:#4a3d13}#navPalette{position:fixed;left:44px;right:auto;top:50%;transform:translateY(-50%);width:224px;max-width:calc(100vw - 52px);max-height:calc(100dvh - 24px);z-index:12;overflow-x:hidden}#wrap.navopen #cv{margin-left:206px}#navPalette .palrow{display:flex;flex-direction:column;align-items:stretch;gap:3px;margin:4px 0 8px}#navPalette .b{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;line-height:1.25;min-height:34px;margin:0;padding:7px 9px}#app{position:relative}#main{position:relative} .palrow{display:flex;flex-wrap:wrap;gap:2px} .palhead{display:flex;justify-content:space-between;align-items:center;color:var(--g);font-weight:600;margin-bottom:4px} .palhead button{margin:0;padding:3px 8px;min-height:28px}#navToggle{position:fixed;left:6px;top:54px;z-index:13;width:34px;min-width:34px;padding:4px;border-color:var(--g);background:#1a1a1de8;font-size:0;color:transparent}#navToggle:before{content:'𝄆';font-size:20px;color:var(--t)}#navPalette.show~#navToggle{left:6px;top:54px}#figPalette{position:fixed;left:44px;right:auto;top:50%;transform:translateY(-50%);width:246px;max-width:calc(100vw - 52px);max-height:calc(100dvh - 24px);z-index:12;overflow-x:hidden}#figPalette .palrow{display:flex;flex-direction:column;align-items:stretch;gap:3px;margin:4px 0 8px}#figPalette .b{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;line-height:1.25;min-height:34px;margin:0;padding:7px 9px}#wrap.figopen #cv{margin-left:252px}#figToggle{position:fixed;left:6px;top:96px;z-index:13;width:34px;min-width:34px;padding:4px;border-color:var(--g);background:#1a1a1de8;font-size:0}#figToggle:before{content:'𝅝';font-size:22px}#figToggle{color:transparent}#figToggle:before{color:var(--t)}#figPalette.show~#figToggle{left:6px;top:96px}
+#foot{display:flex;justify-content:space-between;padding:4px 10px;color:var(--m);background:var(--p);border-top:1px solid var(--l);min-height:26px}
+@media(max-width:700px){#side{position:absolute;z-index:5;height:100%}#side.c{width:0;border:0}#mb{display:inline-block!important}#bar{padding-left:46px;gap:4px}#bar .b{padding:5px 7px;font-size:12px}#figPalette,#navPalette{left:44px;width:min(236px,calc(100vw - 52px));max-height:calc(100dvh - 16px)}#wrap.figopen #cv,#wrap.navopen #cv{margin-left:0}}#mb{display:none}
+
+/* Mixer compacto em formato de dock inferior */
+#mixerPanel{display:none;position:absolute;left:auto;right:12px;bottom:34px;top:auto;width:min(430px,calc(100% - 24px));max-height:min(292px,calc(100dvh - 64px));z-index:20;background:linear-gradient(155deg,#202024,#111114);border:1px solid #62522a;border-radius:13px;box-shadow:0 12px 38px #000e;padding:10px 11px 8px;overflow-x:hidden;overflow-y:auto}
+#mixerPanel.show{display:block;animation:mixerDockIn .16s ease-out}
+@keyframes mixerDockIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mixhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:var(--g);font-weight:700;font-size:11px;letter-spacing:.06em}
+.mixdesk{display:flex;align-items:stretch;gap:8px;min-height:0;overflow-x:auto;padding:2px 2px 5px;scrollbar-width:thin}
+.mixstrip{width:112px;min-width:112px;flex:none;background:linear-gradient(160deg,#303036,#19191d);border:1px solid #48484f;border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:inset 0 1px #ffffff0b}
+.mixstrip.masterstrip{border-color:#806b2a;background:linear-gradient(160deg,#39301b,#19191d)}
+.mixname{font-size:10px;font-weight:750;text-align:center;min-height:17px;display:flex;align-items:center;justify-content:center;line-height:1.15;letter-spacing:.04em}
+.mixread{font:10px ui-monospace,monospace;color:#f0dfaa;background:#101013;border:1px solid #51482e;border-radius:4px;padding:2px 5px;min-width:58px;text-align:center}
+.mixscale{font-size:8px;color:#999;display:flex;justify-content:space-between;width:100%;padding:0 4px}
+.mixfader{height:91px;width:34px;display:flex;align-items:center;justify-content:center;position:relative;background:linear-gradient(90deg,#101013,#3a3a40 48%,#101013);border-radius:5px;border:1px solid #080809;touch-action:none;overflow:visible}
+.mixfader:before{content:"";position:absolute;left:15px;top:7px;bottom:7px;width:2px;background:linear-gradient(#777,#d4af37 50%,#777);opacity:.8;pointer-events:none}
+.mixfader input{appearance:none;-webkit-appearance:none;writing-mode:vertical-lr;direction:rtl;width:28px;height:82px;margin:0;padding:0;transform:none;background:transparent;accent-color:var(--g);cursor:ns-resize;touch-action:none;position:relative;z-index:1}
+.mixfader input::-webkit-slider-runnable-track{width:5px;background:linear-gradient(180deg,#d4af37,#777);border-radius:5px}
+.mixfader input::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:14px;margin-left:-9px;border-radius:4px;background:linear-gradient(180deg,#f1f1f1,#777 45%,#333 55%,#bbb);border:1px solid #111;box-shadow:0 2px 5px #000b}
+.mixfader input::-moz-range-track{width:5px;background:#b9a04c;border-radius:5px}
+.mixfader input::-moz-range-thumb{width:24px;height:14px;border-radius:4px;background:linear-gradient(180deg,#eee,#666);border:1px solid #111}
+.mixpanlabel{font-size:9px;color:var(--m);display:flex;justify-content:space-between;width:100%;padding:0 3px}
+.pan-control{position:relative;width:100%;height:30px;min-height:30px;display:flex;align-items:center;padding:0 2px;flex:none}
+.pan-control:before{content:"C";position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);font-size:8px;color:#d4af37;pointer-events:none;z-index:1}
+.mixpan{display:block;appearance:none;-webkit-appearance:none;width:100%;height:22px;margin:0;background:transparent;touch-action:pan-x;position:relative;z-index:2;cursor:ew-resize}
+.mixpan::-webkit-slider-runnable-track{height:7px;border-radius:8px;border:1px solid #555;background:linear-gradient(90deg,#3973a4 0%,#45454b 48%,#45454b 52%,#a46b37 100%);box-shadow:inset 0 1px 3px #000}
+.mixpan::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-6px;border-radius:50%;border:2px solid #e7d49a;background:radial-gradient(circle at 35% 30%,#fff4c5,#c49b36 48%,#5c4515 80%);box-shadow:0 2px 5px #000b}
+.mixpan::-moz-range-track{height:7px;border-radius:8px;border:1px solid #555;background:linear-gradient(90deg,#3973a4,#45454b 50%,#a46b37)}
+.mixpan::-moz-range-thumb{width:14px;height:14px;border-radius:50%;border:2px solid #e7d49a;background:#c49b36;box-shadow:0 2px 5px #000b}
+.mixbuttons{display:flex;gap:4px}.mixbtn{min-width:34px;padding:3px 7px;border:1px solid #555;border-radius:4px;background:linear-gradient(#38383d,#222226);color:#ddd;font-size:9px;font-weight:750;touch-action:manipulation}.mixbtn.active{background:linear-gradient(#756021,#3c2f0c);border-color:var(--g);color:#ffe08a;box-shadow:0 0 7px #d4af3744}
+.mixfoot{font-size:9px;color:#92929a;line-height:1.25;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:700px){#mixerPanel{right:6px;bottom:30px;width:min(370px,calc(100% - 12px));max-height:min(282px,calc(100dvh - 58px));padding:8px}.mixstrip{width:100px;min-width:100px;gap:3px}.mixfader{height:68px}.mixfader input{height:60px}.pan-control{height:28px}.mixpan{height:26px}.mixfoot{display:none}}
+#phlp{line-height:1.55}#phlp details{border:1px solid var(--l);border-radius:7px;padding:9px 10px;margin:7px 0;background:#ffffff04}#phlp summary{color:var(--g);font-weight:650;cursor:pointer;line-height:1.35}#phlp details p{color:#c8c8cd;line-height:1.55;margin:8px 0 2px}#phlp .h{line-height:1.55}
+</style></head><body><div id=app>
+<nav id=side>
+<div class=tab id=mn><b>☰</b><span>Partitura Pro</span></div>
+<div class="tab on" data-p=pe><b>✍</b><span>Escrita</span></div>
+<div class=tab data-p=pn><b>♪</b><span>Notas</span></div>
+<div class=tab data-p=pp><b>≡</b><span>Partitura</span></div>
+<div class=tab data-p=pr><b>▶</b><span>Reprodução</span></div>
+<div class=tab data-p=pm><b>🎚</b><span>Mixer</span></div>
+<div class=tab data-p=pa><b>⇪</b><span>Arquivo</span></div>
+<div class=tab data-p=phlp><b>?</b><span>Ajuda / Manual</span></div>
+<div class="pan on" id=pe>
+<label class=r><input type=checkbox id=po checked> Só a caneta escreve (dedo rola, palma ignorada)</label>
+<label>Espessura do traço<input type=range id=wi min=1 max=6 step=.5 value=2.5></label>
+<label>Sensibilidade à pressão<input type=range id=se min=0 max=1 step=.1 value=.5></label>
+<label>Atraso do reconhecimento<input type=range id=de min=400 max=2500 step=100 value=1000></label>
+<p><button class=b id=wm>Ativar leitura de cifras</button><button class=b id=rc>Reconhecer agora</button></p>
+<p class=h>Escreva sobre a pauta: cabeça da nota (círculo vazio = mínima/semibreve; preenchido = seminima ou menor), haste, bandeirolas, ponto à direita, acidente à esquerda (♯ = 3+ traços, ♮ = 2, ♭ = 1) e pausas (semínima = zigue-zague; semibreve = retângulo pequeno pendurado na 4ª linha; mínima = retângulo sobre a 3ª linha; colcheia = traço inclinado com 1 ponto à esquerda, semicolcheia = 2 pontos, fusa = 3 pontos). Colcheias: haste + bandeirola (pode ser no mesmo traço da haste); semicolcheia = 2 bandeirolas; fusa = 3. Uma barra sobre as hastes liga as notas. Para tercinas e sextinas, escreva o algarismo 3 ou 6 acima do grupo e mantenha as cabeças alinhadas; o reconhecimento depende de o algarismo ficar legível. Zoom: pinça com dois dedos (ou botões − +). Cifras: escreva acima da linha pontilhada, ou use o modo <b>Aa Cifra</b> (escreva em qualquer ponto do compasso ou toque para digitar). Para corrigir: modo Selecionar + aba Notas.</p></div>
+<div class=pan id=pn>
+<h4>Figura</h4>
+<button class=b data-v=4>Semibreve</button><button class=b data-v=2>Mínima</button><button class=b data-v=1>Semínima</button><button class=b data-v=.5>Colcheia</button><button class=b data-v=.25>Semicolcheia</button><button class=b data-v=.125>Fusa</button>
+<h4>Modificadores</h4>
+<button class=b data-act=dot id=dt>Ponto</button><button class=b data-act=rest id=rs>Pausa</button><br>
+<button class=b data-a=1>♯</button><button class=b data-a=-1>♭</button><button class=b data-a=0>♮</button><button class=b data-a="">Auto</button>
+<h4>Seleção</h4>
+<button class=b data-act=up>▲ Subir</button><button class=b data-act=dn>▼ Descer</button><button class=b data-act=del>Apagar</button><button class=b data-act=cp>Copiar</button><button class=b data-act=ps>Colar</button><button class=b data-act=all>Tudo</button>
+<p class=h>Sem seleção, os botões definem o que o modo Toque insere. Com notas selecionadas, alteram as notas. Colar insere a partir do compasso de reprodução.</p></div>
+<div class=pan id=pp>
+<label>Título<input type=text id=ti></label><label>Instrumento<select id=ins></select></label>
+<label>Clave<select id=clef><option value=G>Sol</option><option value=F>Fá</option><option value=C>Dó (4ª linha-alto)</option></select></label>
+<label>Fórmula de compasso<select id=ts></select></label><label>Tonalidade<select id=key></select></label>
+<label>Compassos<input type=number id=nm min=1 max=64></label><p><button class=b id=addBar>＋ Adicionar compasso</button><button class=b id=delBar>− Excluir último compasso</button></p>
+<p class=h>Contrabaixo soa uma oitava abaixo do escrito (MIDI e MusicXML respeitam isso). Em <b>Ritmo cifra</b>, escolha a figura na barra e toque no compasso para marcar cada batida; toque de novo no mesmo ponto para apagar.</p></div>
+<div class=pan id=pr>
+<label>Andamento (♩ = <span id=tv></span>)<input type=range id=tp min=30 max=240 value=100></label>
+<label class=r><input type=checkbox id=lp> Repetir (loop)</label><label class=r><input type=checkbox id=me> Metrônomo</label><label class=r><input type=checkbox id=mu> Mudo</label>
+<p><button class=b id=pv>◀</button><button class=b id=pl2>▶ Tocar</button><button class=b id=nx>▶</button></p>
+<p class=h>A reprodução começa no compasso indicado na barra (toque em um compasso no modo Selecionar).</p></div>
+<div class=pan id=pm>
+<h4>Mesa de som</h4>
+<p class=h>Controle o nível do instrumento, panorama estéreo, metrônomo e saída master. Os faders atuam também durante a reprodução.</p>
+<button class=b id=openMixer>🎚 Abrir Mixer</button>
+</div>
+<div class=pan id=pa>
+<p><button class=b id=nw>Novo</button><button class=b id=sv>Salvar projeto</button><button class=b id=op>Abrir projeto</button></p>
+<p><button class=b id=ez>Exportar pacote (.zip)</button><button class=b id=ep>Exportar PDF</button></p>
+<p class=h>Pacote .zip = partitura.musicxml + partitura.mid + projeto.json. O PDF é raster (A4) para impressão. Salvamento automático neste aparelho; "Novo" pode ser desfeito.</p><input type=file id=fi accept=".json" hidden></div>
+<div class="pan" id="phlp">
+<h4>Manual do Partitura Pro</h4>
+<p class="h">Este manual explica os controles disponíveis nesta versão. A interface pode variar um pouco conforme o tamanho da tela. No celular, abra o menu ☰ para acessar as abas. Em uma área livre da tela, dê dois toques rápidos para recolher ou reabrir o menu lateral; esse gesto não atua sobre a pauta nem sobre botões e campos.</p>
+<details open><summary>1. Começando e organizando a partitura</summary><p>Na aba <b>Partitura</b>, informe o título, escolha o instrumento, a clave, a fórmula de compasso, a tonalidade e a quantidade de compassos. O editor trabalha com até 64 compassos nesta versão. Use <b>Adicionar compasso</b> para ampliar a pauta. <b>Excluir último compasso</b> remove o compasso final; se ele contiver notas, cifras ou marcações, o aplicativo pedirá confirmação.</p><p>O instrumento selecionado define o timbre de reprodução e a configuração musical usada na exportação. Para contrabaixo, a escrita é apresentada na clave de Fá e a reprodução/exportação considera a oitava abaixo da escrita. Esta versão edita uma pauta/instrumento por projeto; a grade simultânea de vários instrumentos ainda não está implementada.</p></details>
+<details><summary>2. Escrita à mão com caneta</summary><p>Na aba <b>Escrita</b>, configure a espessura do traço, a sensibilidade à pressão e o atraso antes do reconhecimento. Com <b>Só a caneta escreve</b> ativado, a caneta é usada para escrever; o dedo pode rolar a página e o contato da palma é ignorado quando o aparelho informa corretamente o tipo de ponteira.</p><p>Desenhe as notas na pauta: cabeça, haste e bandeirolas. Cabeça vazia representa figuras longas; cabeça preenchida representa semínimas e figuras menores. Um ponto à direita aumenta a duração em metade. Acidentes devem ser escritos antes da nota. Barras podem unir hastes para representar grupos rítmicos. A leitura automática depende da qualidade do traço, do posicionamento e dos recursos de reconhecimento disponíveis no ambiente.</p><p>Use <b>Reconhecer agora</b> para solicitar a leitura dos traços pendentes. O botão <b>Ativar leitura de cifras</b> tenta habilitar o serviço de reconhecimento de imagem integrado. Se o serviço externo não estiver disponível no navegador ou no ambiente de execução, a leitura automática de cifras pode não funcionar; nesse caso, use a entrada manual.</p></details>
+<details><summary>3. Modos Caneta, Aa Cifra, Ritmo cifra e Toque</summary><p><b>Caneta:</b> desenha notas e símbolos na pauta. <b>Aa Cifra:</b> permite escrever cifras acima da pauta ou tocar na região do compasso para inserir/editar uma cifra pelo teclado. Revise a cifra reconhecida antes de confirmar. <b>Ritmo cifra:</b> permite marcar os ataques rítmicos de uma cifra; escolha a duração no seletor que aparece ao ativar esse modo e toque nos pontos do compasso. Toque novamente no mesmo ponto para remover a marcação. <b>Toque:</b> insere notas usando a figura e os modificadores escolhidos. <b>Selecionar:</b> seleciona notas, permite mover a posição de reprodução ao tocar em um compasso e habilita operações de edição. <b>Borracha:</b> remove elementos tocados/rasurados conforme o reconhecimento do traço.</p></details>
+<details><summary>4. Figuras, pausas, acidentes e ghost note (X)</summary><p>Abra o botão <b>𝅝</b> para escolher semibreve, mínima, semínima, colcheia, semicolcheia ou fusa; também há pausas correspondentes. Ative <b>Pontuada</b> para acrescentar metade do valor à figura. <b>X / ghost note</b> alterna a cabeça X para a próxima nota inserida; <b>Nota normal</b> desativa essa opção. A interpretação sonora específica do X depende do instrumento e dos recursos de áudio disponíveis nesta versão; a notação X não equivale automaticamente a todos os símbolos de bateria.</p><p>Na aba <b>Notas</b>, escolha sustenido, bemol, bequadro ou Auto. Sem notas selecionadas, esses controles definem o que será inserido. Com notas selecionadas, permitem alterar a figura, ponto, pausa, acidente e altura.</p></details>
+<details><summary>5. Editar, selecionar, copiar e desfazer</summary><p>Ative <b>Selecionar</b> e toque nas notas para selecioná-las. Na aba <b>Notas</b>, use <b>Subir</b> e <b>Descer</b> para alterar a altura; <b>Apagar</b> remove as notas selecionadas. <b>Copiar</b> guarda o grupo selecionado e <b>Colar</b> insere a cópia a partir do compasso indicado para reprodução. <b>Tudo</b> seleciona todas as notas. Os botões ↶ e ↷ desfazem e refazem alterações. No teclado físico, Ctrl+Z desfaz e Ctrl+Shift+Z refaz; Delete/Backspace apaga a seleção.</p><p>Use + e − para ampliar/reduzir. Em telas sensíveis ao toque, faça pinça com dois dedos para ajustar o zoom e arraste a área para navegar quando não estiver escrevendo.</p></details>
+<details><summary>6. Compassos, repetição e navegação</summary><p>O botão <b>Navegação</b> abre ferramentas para marcar início/fim de ritornello, primeira e segunda casas, Segno, D.S. al Coda, Al Coda e Coda. Escolha a marcação e toque no compasso correspondente. Para casas, marque início e fim separadamente. Use <b>Apagar marcação</b> e toque no compasso para remover uma indicação.</p></details>
+<details><summary>7. Reprodução e metrônomo</summary><p>Na aba <b>Reprodução</b>, ajuste o andamento entre 30 e 240 BPM. Ative <b>Repetir (loop)</b> para repetir a sequência, <b>Metrônomo</b> para ouvir a pulsação e <b>Mudo</b> para silenciar a saída. Use os controles anterior, tocar/parar e próximo. A reprodução começa no compasso indicado na barra; no modo Selecionar, toque em um compasso para definir o ponto de início. O botão ▶ da barra superior também inicia ou interrompe a reprodução.</p></details>
+<details><summary>8. Mixer: volume, PAN, MUTE e SOLO</summary><p>Abra pelo botão <b>Mixer</b> na barra superior ou toque na aba <b>Mixer</b> do menu lateral; ambos abrem o painel diretamente. O painel compacto aparece sobre a parte inferior da área de trabalho; arraste horizontalmente os canais se necessário. O fader vertical do instrumento controla seu volume. O controle <b>PAN</b> fica logo abaixo da escala L–PAN–R: centro mantém o sinal centralizado; mova para L ou R para deslocar a imagem estéreo. <b>MUTE</b> silencia o canal do instrumento. <b>SOLO</b> mantém o instrumento em destaque e silencia o metrônomo. O canal <b>METRÔNOMO</b> possui volume e MUTE. O fader <b>MASTER</b> controla o nível geral de saída; MUTE no Master silencia tudo. Os valores são aplicados suavemente durante a reprodução e guardados no projeto/localmente quando alterados. Se o painel parecer cortado em uma tela pequena, role dentro dele para alcançar os controles inferiores.</p></details>
+<details><summary>9. Salvar, abrir e exportar</summary><p><b>Salvar projeto</b> baixa um arquivo JSON com os dados editáveis. <b>Abrir projeto</b> carrega um JSON salvo anteriormente. O salvamento automático mantém o trabalho neste aparelho/navegador, mas não substitui uma cópia de segurança: exporte o projeto JSON regularmente, especialmente antes de limpar os dados do navegador ou trocar de aparelho. <b>Exportar pacote (.zip)</b> gera um pacote com MusicXML, MIDI e JSON. <b>Exportar PDF</b> gera uma versão em PDF A4 para impressão. O MusicXML é indicado para continuar a edição em programas de notação compatíveis; o MIDI contém os eventos musicais para reprodução em outros programas.</p></details>
+<details><summary>10. Solução de problemas</summary><p><b>Não consigo escrever:</b> confira se está no modo Caneta, se a opção Só a caneta escreve está adequada ao seu dispositivo e se a área da pauta está visível. <b>O reconhecimento erra:</b> aumente o espaçamento e a clareza dos símbolos, ajuste o atraso e use Reconhecer agora; corrija manualmente quando necessário. <b>Não há som:</b> toque em Tocar para liberar o áudio do navegador, confira Mudo, os volumes do Mixer e o volume de mídia do aparelho. <b>Não encontro o PAN:</b> abra o Mixer, role o painel para baixo e procure a faixa L–PAN–R logo abaixo do fader do instrumento. <b>O arquivo não abre:</b> confirme que é um JSON exportado pelo Partitura Pro. <b>O download falha:</b> tente abrir o link em um navegador externo ou pressione e segure o link e escolha baixar.</p></details>
+<p class="h">Dica: faça um teste curto com dois compassos, salve o JSON e exporte o pacote antes de começar uma partitura longa.</p>
+</div>
+</nav>
+<div id=main><div id=bar>
+<button class=b id=mb>☰</button>
+<button class=b data-m=pen>✍ Caneta</button><button class=b data-m=chd>Aa Cifra</button><button class=b data-m=crh>𝅘𝅥𝅮 Ritmo cifra</button><select id=crdur style="width:auto;display:none"><option value="1">Semínima</option><option value=".5">Colcheia</option><option value=".25">Semicolcheia</option><option value=".125">Fusa</option></select><button class=b data-m=tap>＋ Toque</button><button class=b data-m=sel>⬚ Selecionar</button><button class=b data-m=era>⌫ Borracha</button>
+<button class=b id=un>↶</button><button class=b id=rd>↷</button><button class=b id=zo>−</button><button class=b id=zi>+</button><button class=b id=figToggle aria-label="Figuras e pausas" title="Figuras e pausas">𝅝</button><button class=b id=navToggle>𝄆 Navegação</button>
+<button class=b id=pl>▶</button><button class=b id=mxbtn>🎚 Mixer</button><button class=b id=mt>⏱ Metrônomo</button><button class=b id=nw2>＋ Nova</button><span id=mi></span></div>
+<div id=figPalette class=palette><div class=palhead><span>Figuras e pausas</span><button class=b data-close=fig>Fechar</button></div><small>Escolha um símbolo e toque na pauta para inserir. Pausas ficam no centro do compasso.</small><div class=palrow><button class=b data-fig=4>𝅝 Semibreve</button><button class=b data-fig=2>𝅗𝅥 Mínima</button><button class=b data-fig=1>♩ Semínima</button><button class=b data-fig=.5>♪ Colcheia</button><button class=b data-fig=.25>♬ Semicolcheia</button><button class=b data-fig=.125>♫ Fusa</button></div><div class=palrow><button class=b data-rest=4>Pausa semibreve</button><button class=b data-rest=2>Pausa mínima</button><button class=b data-rest=1>Pausa semínima</button><button class=b data-rest=.5>Pausa colcheia</button><button class=b data-rest=.25>Pausa semicolcheia</button><button class=b data-rest=.125>Pausa fusa</button></div><div class=palrow><button class=b data-dot=1>Pontuada</button><button class=b data-xnote=1>X / ghost note</button><button class=b data-noteoff=1>Nota normal</button></div></div><div id=navPalette class=palette><div class=palhead><span>Navegação e repetições</span><button class=b data-close=nav>Fechar</button></div><small>Toque na pauta para marcar o compasso. Casas: marque início e fim separadamente.</small><div class=palrow><button class=b data-nav=repeat-start>𝄆 Ritornello início</button><button class=b data-nav=repeat-end>𝄇 Ritornello fim</button></div><div class=palrow><button class=b data-nav=ending1-start>1ª casa — início</button><button class=b data-nav=ending1-end>1ª casa — fim</button></div><div class=palrow><button class=b data-nav=ending2-start>2ª casa — início</button><button class=b data-nav=ending2-end>2ª casa — fim</button></div><div class=palrow><button class=b data-nav=segno>𝄋 Segno</button><button class=b data-nav=ds-coda>D.S. al Coda</button><button class=b data-nav=to-coda>Al Coda</button><button class=b data-nav=coda>𝄌 Coda</button><button class=b id=navdel>Apagar marcação</button></div></div><div id=mixerPanel aria-label="Mixer de áudio">
+<div class=mixhead><span>🎚 MIXER — PARTITURA PRO</span><button class=b id=closeMixer>Fechar ×</button></div>
+<div class=mixdesk>
+<div class=mixstrip><div class=mixname id=mixInstrumentName>Instrumento</div><div class=mixread id=mixInstrumentDb>0.0 dB</div><div class=mixscale><span>+6</span><span>0</span><span>-∞</span></div><div class=mixfader><input id=mixInstrument type=range min=0 max=1.995 step=0.005 value=0.8 aria-label="Volume do instrumento"></div><div class=mixpanlabel><span>L</span><span>PAN</span><span>R</span></div><div class=pan-control><input class=mixpan id=mixPan type=range min=-1 max=1 step=0.01 value=0 aria-label="Panorama estéreo"></div><div class=mixbuttons><button class=mixbtn id=mixMute>MUTE</button><button class=mixbtn id=mixSolo>SOLO</button></div></div>
+<div class=mixstrip><div class=mixname>METRÔNOMO</div><div class=mixread id=mixMetroDb>0.0 dB</div><div class=mixscale><span>+6</span><span>0</span><span>-∞</span></div><div class=mixfader><input id=mixMetro type=range min=0 max=1.995 step=0.005 value=0.8 aria-label="Volume do metrônomo"></div><div class=mixpanlabel><span>Central</span><span>Click</span><span>Central</span></div><div class=mixbuttons><button class=mixbtn id=mixMetroMute>MUTE</button></div></div>
+<div class="mixstrip masterstrip"><div class=mixname>MASTER</div><div class=mixread id=mixMasterDb>0.0 dB</div><div class=mixscale><span>+6</span><span>0</span><span>-∞</span></div><div class=mixfader><input id=mixMaster type=range min=0 max=1.995 step=0.005 value=0.8 aria-label="Volume master"></div><div class=mixpanlabel><span>Saída</span><span>Estéreo</span><span>LR</span></div><div class=mixbuttons><button class=mixbtn id=mixMasterMute>MUTE</button></div></div>
+</div><div class=mixfoot>Os faders possuem resposta contínua. MUTE silencia o canal; SOLO mantém o instrumento em destaque. O volume master controla a saída geral.</div>
+</div>
+<div id=wrap><div id=cv><canvas id=sc></canvas><canvas id=ik></canvas><div id=ph></div></div></div>
+<div id=ce style="display:none;position:fixed;left:50%;top:30%;transform:translateX(-50%);background:var(--p);border:1px solid var(--g);border-radius:8px;padding:10px;z-index:9"><div class=h>Cifra do acorde</div><input type=text id=cx style="width:170px;margin:6px 0" autocomplete="off" spellcheck="false"><div id=cinfo class=h style="max-width:290px;margin:2px 0 8px;padding:7px;border:1px solid var(--l);border-radius:6px">Digite ou revise a cifra reconhecida.</div><div id=ck style="max-width:290px"></div><button class=b id=cok>OK</button><button class=b id=cdel>Apagar</button></div><div id=foot><span id=tst></span><span id=as></span></div></div></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const INS={piano:['Piano','G',0,0,'triangle',5e3,.6],viol:['Violão','G',24,0,'sawtooth',1800,.5],b4:['Contrabaixo 4 cordas (E-A-D-G)','F',33,-12,'sawtooth',600,.5],b5:['Contrabaixo 5 cordas (B-E-A-D-G)','F',33,-12,'sawtooth',600,.5],vln:['Violino','G',40,0,'sawtooth',3e3,.9],vla:['Viola','C',41,0,'sawtooth',2500,.9],fl:['Flauta','G',73,0,'sine',6e3,.9]};
+const OFF={G:0,F:-12,C:-6},KO={G:0,F:-14,C:-7};
+const mkS=()=>({t:'Sem título',ins:'piano',clef:'G',ts:[4,4],key:0,tempo:100,nm:8,notes:[],chords:[],nav:[],id:1});
+let S,undo=[],redo=[],sel=new Set(),mode='pen',cur={base:1,dot:0,r:0,a:null,x:0},z=1,L,clip=[],startM=0,dpr=1,ictx,tt,svT;
+try{S=JSON.parse(localStorage.getItem('pp'))}catch(e){}if(!S||!S.notes)S=mkS();S.chords=S.chords||[];S.cr=S.cr||[];S.nav=S.nav||[];S.notes.forEach(n=>{n.x=n.x||0});
+const wrap=$('#wrap'),sc=$('#sc'),ik=$('#ik'),ph=$('#ph');
+const mb=()=>S.ts[0]*4/S.ts[1],T=m=>{$('#tst').textContent=m;clearTimeout(tt);tt=setTimeout(()=>$('#tst').textContent='',4e3)};
+// A duração ocupada considera notas e pausas; não permite ultrapassar a fórmula de compasso.
+const usedInBar=m=>S.notes.filter(n=>n.m===m).reduce((a,n)=>a+(+n.d||0),0);
+const fitsInBar=(m,d,ignoreId=null)=>S.notes.filter(n=>n.m===m&&n.id!==ignoreId).reduce((a,n)=>a+(+n.d||0),0)+d<=mb()+1e-8;
+const snap=()=>{const j=JSON.stringify(S);if(undo[undo.length-1]!==j)undo.push(j);if(undo.length>100)undo.shift();redo=[]};
+const save=()=>{clearTimeout(svT);svT=setTimeout(()=>{try{localStorage.setItem('pp',JSON.stringify(S));$('#as').textContent='Salvo automaticamente ✓'}catch(e){$('#as').textContent='Autosave indisponível'}},400)};
+const chg=()=>{draw();save()};
+function lay(W,zz){const s=11*zz,left=64*zz,av=W-left-16,pr=Math.max(1,Math.floor(av/(200*zz)));return{s,left,pr,mw:av/pr,rowH:s*16,top:s*9,rows:Math.ceil(S.nm/pr)}}
+const pos=m=>({r:Math.floor(m/L.pr),c:m%L.pr}),y0=r=>L.top+r*L.rowH,bot=()=>30+OFF[S.clef];
+const yOf=(r,d)=>y0(r)+4*L.s-(d-bot())*L.s/2,dOf=(r,y)=>bot()+Math.round((y0(r)+4*L.s-y)/(L.s/2));
+const mx=m=>L.left+pos(m).c*L.mw,pad=m=>L.s*1.2+(m%L.pr==0?Math.abs(S.key)*L.s*.85:0)+(m==0?L.s*2.6:0);
+const xOf=(m,b)=>mx(m)+pad(m)+b/mb()*(L.mw-pad(m)-L.s*.8),bRaw=(m,x)=>(x-mx(m)-pad(m))/(L.mw-pad(m)-L.s*.8)*mb();
+const mAtC=(x,y)=>mAt(x,Math.max(y,L.s+1)),mAt=(x,y)=>{const r=Math.floor((y-L.top+L.s*8)/L.rowH),c=Math.floor((x-L.left)/L.mw);if(r<0||c<0||c>=L.pr)return-1;const m=r*L.pr+c;return m<S.nm?m:-1};
+const noteX=n=>{const inBar=S.notes.filter(q=>q.m===n.m);if(!n.r&&n.d>=mb()&&inBar.length===1)return mx(n.m)+L.mw/2;let x=xOf(n.m,n.b);if(!n.r&&n.d<=.25){const prev=inBar.filter(q=>!q.r&&q.b<n.b&&q.d<=.25).sort((a,b)=>b.b-a.b)[0];if(prev){const px=xOf(n.m,prev.b);x=Math.max(x,px+1.35*L.s)}}return Math.min(x,mx(n.m)+L.mw-L.s*.8)};const npos=n=>{const r=pos(n.m).r;return{x:noteX(n),y:n.r?y0(r)+2*L.s:yOf(r,n.p)}};
+function resolve(){const k=S.key,ks=k>0?[3,0,4,1,5,2,6].slice(0,k):k<0?[6,2,5,1,4,0,3].slice(0,-k):[],ka=k>0?1:-1;
+for(let m=0;m<S.nm;m++){const mem={};S.notes.filter(n=>n.m==m&&!n.r).sort((a,b)=>a.b-b.b).forEach(n=>{let f;if(n.a!=null){f=n.a;mem[n.p]=f}else if(n.p in mem)f=mem[n.p];else f=ks.includes(n.p%7)?ka:0;n.f=f})}}
+const mid=n=>[0,2,4,5,7,9,11][n.p%7]+12*(Math.floor(n.p/7)+1)+n.f+INS[S.ins][3];
+const ln=(g,a,b,c,d)=>{g.beginPath();g.moveTo(a,b);g.lineTo(c,d);g.stroke()};
+function fclef(g,s,x,Y){g.save();g.lineCap='round';g.lineWidth=s*.3;g.beginPath();g.moveTo(x,Y+s);g.bezierCurveTo(x+s*.2,Y-s*.5,x+s*2.3,Y-s*.2,x+s*2.1,Y+s*1.3);g.bezierCurveTo(x+s*1.9,Y+s*2.5,x+s*1,Y+s*3.2,x-s*.1,Y+s*3.9);g.stroke();g.beginPath();g.arc(x,Y+s,s*.38,0,7);g.fill();for(const d of[.5,1.5]){g.beginPath();g.arc(x+s*2.9,Y+d*s,s*.2,0,7);g.fill()}g.restore()}
+function gclef(g,s,x,Y){g.save();g.translate(x,Y+3*s);g.scale(s,s);g.lineCap='round';g.lineJoin='round';g.lineWidth=.3;g.beginPath();
+g.moveTo(.45,1.75);g.bezierCurveTo(.3,2.55,1.45,2.9,1.5,1.9);
+g.bezierCurveTo(1.55,.6,1.3,-1.2,1.35,-2.7);
+g.bezierCurveTo(1.4,-3.7,1.8,-4.5,2.2,-4.3);
+g.bezierCurveTo(2.7,-4.1,2.6,-3.1,2.1,-2.3);
+g.bezierCurveTo(1.6,-1.5,.35,-.9,.3,.2);
+g.bezierCurveTo(.25,1.3,1.2,1.6,1.85,1.1);
+g.bezierCurveTo(2.5,.6,2.35,-.7,1.5,-.75);
+g.bezierCurveTo(.9,-.8,.7,-.1,1.15,.2);
+g.stroke();g.beginPath();g.arc(.45,1.75,.2,0,7);g.fill();g.beginPath();g.arc(1.15,.2,.2,0,7);g.fill();g.restore()}
+function cclef(g,s,x,Y){g.save();g.lineCap='round';g.fillRect(x,Y,s*.5,s*4);g.lineWidth=s*.12;ln(g,x+s*.8,Y,x+s*.8,Y+s*4);g.lineWidth=s*.28;
+for(const q of[1,-1]){g.beginPath();g.moveTo(x+s*1.05,Y+(2-q*.15)*s);g.bezierCurveTo(x+s*1.2,Y+(2-q*1.5)*s,x+s*2.5,Y+(2-q*1.6)*s,x+s*2.4,Y+(2-q*.85)*s);g.bezierCurveTo(x+s*2.3,Y+(2-q*.3)*s,x+s*1.7,Y+(2-q*.25)*s,x+s*1.6,Y+(2-q*.6)*s);g.stroke()}g.restore()}
+function restDraw(g,s,x,Y,n){const bs=baseOf(n),dt=bs!=n.d,lw=Math.max(1,s*.09);g.lineWidth=lw;
+if(bs>=4)g.fillRect(x-s*.7,Y+s,s*1.4,s*.55);
+else if(bs>=2)g.fillRect(x-s*.7,Y+2*s-s*.55,s*1.4,s*.55);
+else if(bs>=1){g.beginPath();g.moveTo(x-s*.3,Y+s*.8);g.lineTo(x+s*.35,Y+s*1.5);g.lineTo(x-s*.3,Y+s*2.2);g.lineTo(x+s*.3,Y+s*2.9);g.quadraticCurveTo(x-s*.5,Y+s*2.9,x-s*.1,Y+s*3.4);g.lineWidth=s*.22;g.stroke();g.lineWidth=lw}
+else{const nf=bs<=.125?3:bs<=.25?2:1;g.lineWidth=s*.16;for(let i=0;i<nf;i++){g.beginPath();g.arc(x-s*(.15+.2*i),Y+s*(1.4+.85*i),s*.26,0,7);g.fill()}ln(g,x+s*.45,Y+s*.9,x-s*(.15+.2*(nf-1))-s*.2,Y+s*(1.4+.85*(nf-1))+s*.8);g.lineWidth=lw}
+if(dt){g.beginPath();g.arc(x+s*1.1,Y+s*(bs>=2&&bs<4?1.5:bs>=4?1.3:2),s*.14,0,7);g.fill()}}
+const resamp=(p,st)=>{const o=[p[0]];let rem=st;for(let i=1;i<p.length;i++){let a=p[i-1],b=p[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]);while(d>=rem&&d>0){const t=rem/d;a=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];o.push(a);d-=rem;rem=st}rem-=d}return o};
+function filled(k){const w=k.x1-k.x0,h=k.y1-k.y0;if(w<1||h<1)return false;const N=5,g=new Array(N*N).fill(0),mk=(x,y)=>{const i=Math.min(N-1,Math.max(0,Math.floor((x-k.x0)/w*N))),j=Math.min(N-1,Math.max(0,Math.floor((y-k.y0)/h*N)));g[j*N+i]=1};
+for(let i=1;i<k.p.length;i++){const a=k.p[i-1],b=k.p[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/Math.max(.8,Math.min(w,h)/N/2)));for(let t=0;t<=n;t++)mk(a[0]+(b[0]-a[0])*t/n,a[1]+(b[1]-a[1])*t/n)}
+let c=0;for(let j=1;j<4;j++)for(let i=1;i<4;i++)c+=g[j*N+i];return!!g[12]&&c>=6}
+function stemFlag(k,s){
+// Separa o eixo vertical da haste das excursões laterais que formam as bandeirolas.
+// A quantidade é contada por excursões, não pelo comprimento total dos traços.
+const st=Math.max(1,s*.08),P=resamp(k.p,st);if(P.length<8)return null;
+const xs=P.map(p=>p[0]).sort((a,b)=>a-b),mx=xs[xs.length>>1],tol=.30*s;
+let axis=null,axisMin=Infinity,axisMax=-Infinity,offRuns=[],off=null;
+P.forEach((p,i)=>{if(Math.abs(p[0]-mx)<=tol){if(!axis)axis={a:p[1],b:p[1]};axis.a=Math.min(axis.a,p[1]);axis.b=Math.max(axis.b,p[1]);axisMin=Math.min(axisMin,p[1]);axisMax=Math.max(axisMax,p[1]);if(off){offRuns.push(off);off=null}}
+else{axis=null;if(!off)off={len:0,a:p[1],b:p[1],first:i,last:i};off.len+=st;off.a=Math.min(off.a,p[1]);off.b=Math.max(off.b,p[1]);off.last=i}});
+if(off)offRuns.push(off);
+if(!Number.isFinite(axisMin)||axisMax-axisMin<Math.max(1.35*s,.58*k.h))return null;
+const flags=offRuns.filter(q=>q.len>=.42*s&&(q.b-q.a)>=.10*s);
+if(!flags.length)return null;
+const first=flags[0],last=flags[flags.length-1],endY=(first.a+first.b+last.a+last.b)/4;
+return{n:Math.max(1,Math.min(3,flags.length)),end:endY<(axisMin+axisMax)/2?'t':'b'}
+}
+function kindOf(k,s){if(k.w<.55*s&&k.h<.55*s)return'D';
+if(k.h>=1.5*s&&k.w<=.8*k.h){const f=stemFlag(k,s);if(f){k.fl=f.n;k.fe=f.end;return'S'}}
+if(k.h>=1.5*s&&k.w<=.3*k.h&&k.len<=1.3*k.h)return'S';
+const rt=k.w/(k.h||1),e=k.p[k.p.length-1],cl=Math.hypot(k.p[0][0]-e[0],k.p[0][1]-e[1]);
+if(k.w>=.5*s&&k.w<=3.4*s&&k.h>=.45*s&&k.h<=3.4*s&&rt>.5&&rt<2&&(cl<.7*Math.max(k.w,k.h)||k.fill))return'H';return'O'}
+const BG=new Map();
+function beams(){BG.clear();const comp=S.ts[1]==8&&S.ts[0]%3==0,U=comp?1.5:1,B=S.ts[1]==4&&(S.ts[0]==2||S.ts[0]==4)?1:U;
+const emit=g=>{if(g.length<2)return;const up=g.reduce((a,n)=>a+n.p,0)/g.length<bot()+4,ys=g.map(n=>yOf(pos(n.m).r,n.p)),y=up?Math.min(...ys)-3.4*L.s:Math.max(...ys)+3.4*L.s;g.forEach(n=>BG.set(n.id,{g,up,y}))};
+const by=(g,u)=>{const o=[];g.forEach(n=>{const k=Math.floor(n.b/u+1e-9),l=o[o.length-1];if(l&&l.k==k)l.g.push(n);else o.push({k,g:[n]})});return o.map(x=>x.g)};
+for(let m=0;m<S.nm;m++){const ns=S.notes.filter(n=>n.m==m&&!n.r).sort((a,b)=>a.b-b.b);let run=[];
+const flush=()=>{if(!run.length)return;
+// Agrupamento sincopado: semicolcheia + colcheia + semicolcheia (uma barra principal contínua e barras secundárias nas pontas).
+let handled=false;for(let j=0;j+2<run.length;j++){const tri=run.slice(j,j+3),ds=tri.map(baseOf),cont=Math.abs(tri[0].b+tri[0].d-tri[1].b)<1e-6&&Math.abs(tri[1].b+tri[1].d-tri[2].b)<1e-6;if(ds[0]===.25&&ds[1]===.5&&ds[2]===.25&&cont){emit(tri);handled=true}}
+if(!handled){const dur=baseOf(run[0]),same=run.every(n=>Math.abs(baseOf(n)-dur)<1e-8);if(same&&run.length>=3&&[.5,.25].includes(dur)){const chunk=(S.ts[1]===4&&S.ts[0]>=4)?4:2;for(let i=0;i<run.length;i+=chunk)emit(run.slice(i,Math.min(i+chunk,run.length)));}else by(run,B).forEach(sg=>{if(B>U&&sg.every(n=>baseOf(n)==.5))emit(sg);else by(sg,U).forEach(emit)})}run=[]};
+ns.forEach((n,i)=>{const ok=baseOf(n)<=.5&&n.d<4&&!ns.some((q,j)=>j!=i&&Math.abs(q.b-n.b)<1e-6);if(!ok){flush();return}const p=run[run.length-1];if(p&&Math.abs(p.b+p.d-n.b)>1e-6)flush();run.push(n)});flush()}}
+function paint(g,l,r0,r1,ink,oy,scr){beams();const s=l.s,k=S.key,ka=Math.abs(k);g.save();g.translate(0,oy);g.strokeStyle=g.fillStyle=ink;g.lineWidth=Math.max(1,s*.09);
+const F=q=>g.font=q+'px "Noto Music","Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",serif';g.textAlign='left';
+for(let r=r0;r<=r1;r++){const Y=y0(r),cnt=Math.min(l.pr,S.nm-r*l.pr),xe=l.left+cnt*l.mw;
+for(let i=0;i<5;i++)ln(g,s*.8,Y+i*s,xe,Y+i*s);
+for(let c=0;c<=cnt;c++){const x=c?l.left+c*l.mw:s*.8;ln(g,x,Y,x,Y+4*s)}
+if(r*l.pr+cnt==S.nm){g.lineWidth=s*.3;ln(g,xe-s*.15,Y,xe-s*.15,Y+4*s);g.lineWidth=Math.max(1,s*.09)}
+if(S.clef=='F')fclef(g,s,s*1.3,Y);else if(S.clef=='C')cclef(g,s,s*1.2,Y);else gclef(g,s,s*1.1,Y)
+const pat=k>0?[38,35,39,36,33,37,34]:[34,37,33,36,32,35,31];F(s*2.3);
+for(let i=0;i<ka;i++){let d=pat[i]+KO[S.clef];if(k<0&&i==6&&S.clef=='F')d=24;g.fillText(k>0?'♯':'♭',l.left+s*.9+i*s*.85,yOf(r,d)+s*.45)}
+if(r==0){g.font='bold '+s*2.8+'px sans-serif';g.textAlign='center';const x=l.left+s*1.4+ka*s*.85;g.fillText(S.ts[0],x,Y+2*s);g.fillText(S.ts[1],x,Y+4*s);g.textAlign='left'}
+g.globalAlpha=.55;g.font=s*.95+'px sans-serif';g.fillText(r*l.pr+1,l.left+3,Y-s*.7);g.globalAlpha=1;
+if(scr&&(mode=='pen'||mode=='chd')){g.save();g.setLineDash([2,6]);g.globalAlpha=.3;ln(g,l.left,Y-2.2*s,xe,Y-2.2*s);g.setLineDash([]);g.font=s*.8+'px sans-serif';g.globalAlpha=.4;g.fillText('cifras ↑',xe-s*4.2,Y-2.5*s);g.restore()}}
+S.notes.forEach(n=>{const r=pos(n.m).r;if(r<r0||r>r1)return;const x=noteX(n),Y=y0(r),y=n.r?0:yOf(r,n.p),c=scr&&sel.has(n.id)?'#d4af37':ink;g.strokeStyle=g.fillStyle=c;g.lineWidth=Math.max(1,s*.09);
+if(n.r){restDraw(g,s,x,Y,n);return}
+const b0=bot();if(n.p<b0)for(let q=b0-2;q>=n.p;q-=2){const yy=yOf(r,q);ln(g,x-s*.95,yy,x+s*.95,yy)}if(n.p>b0+8)for(let q=b0+10;q<=n.p;q+=2){const yy=yOf(r,q);ln(g,x-s*.95,yy,x+s*.95,yy)}
+if(n.x){g.save();g.lineCap='round';g.lineWidth=s*.16;ln(g,x-s*.48,y-s*.48,x+s*.48,y+s*.48);ln(g,x-s*.48,y+s*.48,x+s*.48,y-s*.48);g.restore()}else{g.beginPath();g.ellipse(x,y,s*.62,s*.46,-.35,0,7);if(n.d<2)g.fill();else{g.lineWidth=s*.17;g.stroke();g.lineWidth=Math.max(1,s*.09)}}
+const base=baseOf(n),dotted=!n.tuplet&&base!=n.d;
+const bg=BG.get(n.id);if(n.d<4){const up=bg?bg.up:n.p<b0+4,sx=x+(up?s*.58:-s*.58),ex=bg?0:base<=.125?s*.9:base<=.25?s*.4:0,ey=bg?bg.y:up?y-s*3.4-ex:y+s*3.4+ex,dr=up?1:-1;ln(g,sx,y,sx,ey);
+if(bg&&bg.g[0]===n){const G=bg.g,xs=G.map(q=>xOf(q.m,q.b)+(up?s*.58:-s*.58)),o2=up?s*.8:-s*.8;g.lineWidth=s*.45;ln(g,xs[0],bg.y,xs[xs.length-1],bg.y);
+for(let lv=2;lv<=3;lv++){const th=lv==2?.25:.125,oo=o2*(lv-1);G.forEach((q,i)=>{if(baseOf(q)<=th){if(i+1<G.length&&baseOf(G[i+1])<=th)ln(g,xs[i],bg.y+oo,xs[i+1],bg.y+oo);else if(!(i>0&&baseOf(G[i-1])<=th))ln(g,xs[i],bg.y+oo,xs[i]+(i+1<G.length?s*.9:-s*.9),bg.y+oo)}})}
+g.lineWidth=Math.max(1,s*.09)}
+const fl=bg?0:base<=.125?3:base<=.25?2:base<=.5?1:0;
+for(let i=0;i<fl;i++){const o=i*s*.75*dr;g.beginPath();g.moveTo(sx,ey+o);g.quadraticCurveTo(sx+s*1.3,ey+dr*s*1.1+o,sx+s*.7,ey+dr*s*2.1+o);g.lineWidth=s*.2;g.stroke();g.lineWidth=Math.max(1,s*.09)}}
+if(dotted){g.beginPath();g.arc(x+s*1.1,y-((n.p-b0)%2==0?s*.25:0),s*.13,0,7);g.fill()}
+if(n.a!=null){F(s*2.2);g.fillText(['♭','♮','♯'][n.a+1],x-s*1.7,y+s*.4)}});
+// Chaves gráficas de grupos irregulares: 3:2 (tercina) e 6:4 (sextina).
+const tupletGroups=new Map();S.notes.filter(n=>n.tuplet&&!n.r&&n.tg!=null).forEach(n=>{const key=n.m+':'+n.tg;if(!tupletGroups.has(key))tupletGroups.set(key,[]);tupletGroups.get(key).push(n)});tupletGroups.forEach(q=>{q.sort((a,b)=>a.b-b.b);if(q.length!==q[0].tuplet)return;const xs=q.map(n=>noteX(n)),ys=q.map(n=>yOf(pos(n.m).r,n.p)),yy=Math.min(...ys)-4.2*s,mid=(xs[0]+xs[xs.length-1])/2;g.save();g.strokeStyle=g.fillStyle=ink;g.lineWidth=Math.max(1,s*.1);g.beginPath();g.moveTo(xs[0],yy+s*.25);g.lineTo(xs[0],yy);g.lineTo(mid-s*.35,yy);g.moveTo(mid+s*.35,yy);g.lineTo(xs[xs.length-1],yy);g.lineTo(xs[xs.length-1],yy+s*.25);g.stroke();g.font='bold '+s*1.1+'px sans-serif';g.textAlign='center';g.fillText(String(q[0].tuplet),mid,yy+s*.25);g.restore()});(S.chords||[]).forEach(c=>{const r=pos(c.m).r;if(r<r0||r>r1)return;g.fillStyle=g.strokeStyle=ink;g.font='bold '+s*1.7+'px sans-serif';if(c.t)g.fillText(c.t,xOf(c.m,c.b)-s*.6,y0(r)-s*3.4)});
+// Slash notation for chord strumming/rhythm, separated from pitched notes.
+const crs=(S.cr||[]).filter(q=>pos(q.m).r>=r0&&pos(q.m).r<=r1);for(let m=r0*L.pr;m<Math.min(S.nm,(r1+1)*L.pr);m++){const a=crs.filter(q=>q.m===m).sort((x,y)=>x.b-y.b),used=new Set(),Y=y0(pos(m).r)+2.5*s,beamY=y0(pos(m).r)+.65*s;for(let i=0;i<a.length;i++){const q=a[i];if(used.has(q.id))continue;let group=[q];if(q.d<=.5){let n=a[i+1];if(n&&n.d===q.d&&Math.abs(q.b+q.d-n.b)<1e-7){group=[q,n];used.add(n.id)}}used.add(q.id);const xs=group.map(v=>xOf(v.m,v.b)),stems=xs.map(x=>x+s*.28);g.save();g.lineCap='round';g.lineWidth=Math.max(1,s*.12);group.forEach((v,j)=>{const x=xs[j];ln(g,x-s*.36,Y+s*.22,x+s*.36,Y-s*.22);ln(g,x+s*.28,Y-s*.18,x+s*.28,beamY)});if(group.length>1){g.lineWidth=s*.42;ln(g,stems[0],beamY,stems[1],beamY);if(q.d<=.25){g.lineWidth=s*.3;ln(g,stems[0],beamY+s*.48,stems[1],beamY+s*.48);if(q.d<=.125)ln(g,stems[0],beamY+s*.88,stems[1],beamY+s*.88)}}else if(q.d<=.5){g.lineWidth=s*.2;for(let j=0;j<(q.d<=.125?3:q.d<=.25?2:1);j++){const yy=beamY+j*s*.43;g.beginPath();g.moveTo(stems[0],yy);g.quadraticCurveTo(stems[0]+s*.9,yy+s*.2,stems[0]+s*.8,yy+s*.75);g.stroke()}}g.restore()}}(S.nav||[]).forEach(v=>{const r=pos(v.m).r;if(r<r0||r>r1)return;const col=pos(v.m).c,xStart=L.left+col*L.mw,xEnd=xStart+L.mw,Y=y0(r);g.save();g.fillStyle=g.strokeStyle=ink;g.lineWidth=Math.max(1,s*.12);g.font='bold '+s*1.8+'px sans-serif';g.textAlign='left';if(v.type=='repeat-start'){const x=xStart;ln(g,x,Y,x,Y+4*s);g.lineWidth=s*.28;ln(g,x+s*.28,Y,x+s*.28,Y+4*s);g.lineWidth=s*.1;for(const yy of [Y+1.65*s,Y+2.35*s]){g.beginPath();g.arc(x+s*.7,yy,s*.11,0,7);g.fill()}}else if(v.type=='repeat-end'){const x=xEnd-s*.28;ln(g,x,Y,x,Y+4*s);g.lineWidth=s*.28;ln(g,x+s*.28,Y,x+s*.28,Y+4*s);g.lineWidth=s*.1;for(const yy of [Y+1.65*s,Y+2.35*s]){g.beginPath();g.arc(x-s*.42,yy,s*.11,0,7);g.fill()}}else if(v.type=='ending1-start'||v.type=='ending2-start'){const num=v.type.includes('1')?'1':'2',end=(S.nav||[]).find(q=>q.type=='ending'+num+'-end'&&q.m>=v.m),xe=end?L.left+(pos(end.m).c+1)*L.mw:xEnd,yy=Y-.9*s;g.fillText(num+'.',xStart+s*.2,yy);ln(g,xStart+s*.2,yy+s*.15,xe,yy+s*.15);ln(g,xe,yy+s*.15,xe,yy+s*.55)}else if(v.type=='ending1-end'||v.type=='ending2-end'){const x=xEnd;ln(g,x,Y-.75*s,x,Y-.25*s)}else{const labels={'ds-coda':'D.S. al Coda','to-coda':'Al Coda','coda':'𝄌 Coda','segno':'𝄋 Segno'};const x=xStart+s*.25,yy=Y-1.05*s;g.font='bold '+s*1.8+'px sans-serif';g.fillText(labels[v.type]||'',x,yy)}});
+g.restore()}
+function draw(){const g=sc.getContext('2d'),W=sc.width/dpr;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,sc.width,sc.height);resolve();try{paint(g,L,0,L.rows-1,'#e9e4d4',0,1)}catch(e){T('Erro ao desenhar: '+e.message)}mi()}
+function mi(){$('#mi').textContent='Compasso '+(startM+1)+' · '+S.ts[0]+'/'+S.ts[1]}
+let lastW=0;function size(){const w=wrap.clientWidth;if(!w)return;L=lay(w,z);const h=L.top+L.rows*L.rowH+L.s*8;lastW=w;dpr=Math.min(devicePixelRatio||1,2);for(const c of[sc,ik]){c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px'}$('#cv').style.height=h+'px';ictx=ik.getContext('2d');batch=[];draw()}
+/* ===== reconhecimento ===== */
+let batch=[],tmr,tupleSeq=1;
+function tupleLabel(g,s){
+ // Reconhecimento geométrico conservador dos algarismos 3 e 6.
+ // O número deve ser um traço contínuo, isolado das cabeças e das hastes.
+ const candidates=g.k.filter(k=>k.p&&k.p.length>=7&&k.w>=.35*s&&k.h>=.7*s&&k.w<=2.8*s&&k.h<=3.8*s);
+ for(const k of candidates){
+  const a=k.p[0],b=k.p[k.p.length-1],close=Math.hypot(a[0]-b[0],a[1]-b[1]),scale=Math.max(k.w,k.h);
+  const upper=k.p.filter(q=>q[1]<=k.y0+k.h*.44),lower=k.p.filter(q=>q[1]>=k.y0+k.h*.56);
+  const left=k.x0+k.w*.38,right=k.x0+k.w*.66;
+  const lowerLeft=lower.some(q=>q[0]<=left),lowerRight=lower.some(q=>q[0]>=right);
+  const upperRight=upper.some(q=>q[0]>=right);
+  // O 6 precisa formar um laço na metade inferior, além de apresentar retorno.
+  if(k.h>=.9*s&&k.len>1.35*scale&&lowerLeft&&lowerRight&&upperRight&&
+     (a[0]>k.x0+k.w*.35||b[0]>k.x0+k.w*.35))return 6;
+  // O 3 permanece aberto e percorre as regiões superior e inferior à direita.
+  const leftEnds=a[0]<=k.x0+k.w*.62&&b[0]<=k.x0+k.w*.72;
+  if(close>.30*scale&&leftEnds&&upper.length>=3&&lower.length>=3&&upperRight&&lowerRight)return 3;
+ }
+ return 0;
+}
+function recog(B){const s=L.s;let adjustedTuplets=0;if(!B.length)return 0;
+B.forEach(k=>{k.w=k.x1-k.x0;k.h=k.y1-k.y0;k.cx=(k.x0+k.x1)/2;k.cy=(k.y0+k.y1)/2;k.fill=filled(k);k.k=kindOf(k,s)});
+// Detecta a cabeça X antes da classificação de cabeças ovais: dois traços diagonais curtos que se cruzam.
+const xHeads=[];for(let i=0;i<B.length;i++){const a=B[i];if(a.u||a.w<.35*s||a.h<.35*s||a.w>2.2*s||a.h>2.2*s||a.len<.45*s)continue;const ap=a.p[0],az=a.p[a.p.length-1],as=(az[1]-ap[1])/((az[0]-ap[0])||1);if(Math.abs(as)<.35||Math.abs(as)>3.5)continue;for(let j=i+1;j<B.length;j++){const b=B[j];if(b.u||b.w<.35*s||b.h<.35*s||b.w>2.2*s||b.h>2.2*s||b.len<.45*s)continue;const bp=b.p[0],bz=b.p[b.p.length-1],bs=(bz[1]-bp[1])/((bz[0]-bp[0])||1);if(as*bs>-.12||Math.abs(as-bs)<.7)continue;const cx=(a.cx+b.cx)/2,cy=(a.cy+b.cy)/2;if(Math.abs(a.cx-b.cx)>.65*s||Math.abs(a.cy-b.cy)>.65*s)continue;const mm=mAt(cx,cy);if(mm<0)continue;a.u=b.u=1;a.k=b.k='X';B.forEach(q=>{if(q!==a&&q!==b&&!q.u&&q.cx>=Math.min(a.x0,b.x0)-.45*s&&q.cx<=Math.max(a.x1,b.x1)+.45*s&&q.cy>=Math.min(a.y0,b.y0)-.45*s&&q.cy<=Math.max(a.y1,b.y1)+.45*s){q.u=1;q.k='X'}});xHeads.push({t:'n',x:{x0:Math.min(a.x0,b.x0),x1:Math.max(a.x1,b.x1),y0:Math.min(a.y0,b.y0),y1:Math.max(a.y1,b.y1),w:Math.max(a.x1,b.x1)-Math.min(a.x0,b.x0),h:Math.max(a.y1,b.y1)-Math.min(a.y0,b.y0),cx,cy},base:1,xnote:1});break}}
+const H=B.filter(k=>k.k=='H'),St=B.filter(k=>k.k=='S'),D=B.filter(k=>k.k=='D'),O=B.filter(k=>k.k=='O'),out=[...xHeads];
+O.filter(o=>o.w>=1.5*s&&o.h<=.45*o.w).sort((p,q)=>q.w-p.w).forEach(b=>{const a=b.p[0],z=b.p[b.p.length-1],sl=(z[1]-a[1])/((z[0]-a[0])||1);if(Math.abs(sl)>.6)return;const at=St.filter(t=>{const yb=a[1]+(t.cx-a[0])*sl;return t.cx>=b.x0-1.1*s&&t.cx<=b.x1+1.1*s&&(Math.abs(t.y0-yb)<2.25*s||Math.abs(t.y1-yb)<2.25*s)});if(at.length>=2){b.u=1;const span=Math.max(1,b.x1-b.x0);const level=b.h<=.8*s?1:(b.len>2.35*span?3:b.len>1.35*span?2:1);at.forEach(t=>{t.bm=Math.min(3,(t.bm||0)+level);if(!t.gp)t.gp=b})}});
+H.sort((a,c)=>a.cx-c.cx).forEach(h=>{
+const dist=t=>Math.min(Math.abs(t.cx-h.x1),Math.abs(t.cx-h.x0));
+const t=St.filter(t=>!t.u&&t.x0<=h.x1+.6*s&&t.x1>=h.x0-.6*s&&t.y0<=h.y1+.6*s&&t.y1>=h.y0-.6*s).sort((a,c)=>dist(a)-dist(c))[0];let fl=0;
+if(!t&&h.fill&&h.w>=1.45*h.h){const m=mAt(h.cx,h.cy);if(m>=0){const Y=y0(pos(m).r);if(h.cy>Y+.6*s&&h.cy<Y+2.4*s){h.u=1;out.push({t:'r',x:h,base:h.cy<Y+1.5*s?4:2});return}}}
+if(t){t.u=1;fl=(t.bm||0)+(t.fl||0);const ey=t.fe?(t.fe=='t'?t.y0:t.y1):(h.cy>(t.y0+t.y1)/2?t.y0:t.y1);O.forEach(o=>{if(!o.u&&o.h<2.6*s&&o.w<2.6*s&&Math.abs(o.cy-ey)<2*s&&o.cx>t.x0-.6*s&&o.cx<t.x1+2.6*s){o.u=1;fl+=o.len>5.8*s?3:o.len>3.8*s?2:1}})}
+const dt=D.find(d=>!d.u&&d.w<=.48*s&&d.h<=.48*s&&d.cx>h.x1+.12*s&&d.cx-h.x1<1.35*s&&Math.abs(d.cy-h.cy)<.72*s);if(dt)dt.u=1;
+out.push({t:'n',x:h,base:!t?(h.fill?1:4):fl>=3?.125:fl==2?.25:fl==1?.5:h.fill?1:2,dot:!!dt,gp:t&&t.gp,tuplet:h.tuplet||null})});
+const pool=[...O.filter(o=>!o.u),...St.filter(t=>!t.u),...D.filter(d=>!d.u)].sort((a,c)=>a.x0-c.x0),gs=[],mg=1.55*s;
+pool.forEach(o=>{const g=gs.find(g=>o.x0<=g.x1+mg&&o.x1>=g.x0-mg&&o.y0<=g.y1+mg&&o.y1>=g.y0-mg);if(g){g.x0=Math.min(g.x0,o.x0);g.x1=Math.max(g.x1,o.x1);g.y0=Math.min(g.y0,o.y0);g.y1=Math.max(g.y1,o.y1);g.k.push(o)}else gs.push({x0:o.x0,x1:o.x1,y0:o.y0,y1:o.y1,k:[o]})});
+gs.forEach(g=>{g.w=g.x1-g.x0;g.h=g.y1-g.y0;g.cx=(g.x0+g.x1)/2;g.cy=(g.y0+g.y1)/2;
+const label=tupleLabel(g,s),count=label===6?6:label===3?3:0;
+if(count&&g.h>.25*s&&g.h<5*s){
+ // Só considera notas abaixo do algarismo, no mesmo compasso e em uma região
+ // horizontal compatível com o grupo escrito.
+ const fresh=out.filter(n=>{
+  if(n.t!=='n'||n.xnote||n.tuplet)return false;
+  const mm=mAt(n.x.cx,n.x.cy);
+  return mm>=0&&n.x.cy>g.cy+.12*s&&n.x.cy-g.cy<6.2*s&&
+   n.x.cx>=g.x0-3.0*s&&n.x.cx<=g.x1+3.0*s;
+ });
+ const stored=S.notes.filter(n=>!n.r&&!n.tuplet).map(n=>({
+  t:'n',base:baseOf(n),existing:n,
+  x:{cx:noteX(n),cy:yOf(pos(n.m).r,n.p)}
+ })).filter(n=>{
+  const mm=mAt(n.x.cx,n.x.cy);
+  return mm>=0&&n.x.cy>g.cy+.12*s&&n.x.cy-g.cy<6.2*s&&
+   n.x.cx>=g.x0-3.0*s&&n.x.cx<=g.x1+3.0*s;
+ });
+ const candidates=[...fresh,...stored].sort((a,b)=>Math.abs(a.x.cx-g.cx)-Math.abs(b.x.cx-g.cx));
+ if(candidates.length>=count){
+  const group=candidates.slice(0,count).sort((a,b)=>a.x.cx-b.x.cx);
+  const sameBar=group.every(n=>mAt(n.x.cx,n.x.cy)===mAt(group[0].x.cx,group[0].x.cy));
+  const same=group.every(n=>Math.abs(n.base-group[0].base)<1e-8);
+  const span=group[count-1].x.cx-group[0].x.cx;
+  const gaps=group.slice(1).map((n,i)=>n.x.cx-group[i].x.cx);
+  const centerError=Math.abs(g.cx-(group[0].x.cx+group[count-1].x.cx)/2);
+  if(sameBar&&same&&span<16*s&&centerError<Math.max(3.5*s,span*.48)&&
+     gaps.every(v=>v>.30*s&&v<5.5*s)&&
+     group.every(n=>Math.abs(n.x.cy-group[0].x.cy)<2.8*s)){
+   const tg=tupleSeq++;
+   if(group.every(n=>n.existing)){
+    const originals=group.map(n=>n.existing),m=originals[0].m,base=group[0].base;
+    const start=Math.min(...originals.map(n=>n.b)),step=base*2/3,end=start+step*count;
+    const ids=new Set(originals.map(n=>n.id));
+    const collision=S.notes.some(v=>v.m===m&&!ids.has(v.id)&&v.b<end-1e-8&&v.b+(+v.d||0)>start+1e-8);
+    if(!collision&&end<=mb()+1e-8){
+     snap();
+     group.forEach((entry,i)=>{const n=entry.existing;n.tuplet=label;n.tg=tg;n.tupletBase=base;n.d=step;n.b=start+i*step});
+     adjustedTuplets+=count;
+    }
+   }else if(group.every(n=>!n.existing)){
+    group.forEach(n=>{n.tuplet=label;n.tg=tg;n.tupletBase=n.base});
+   }
+   return;
+  }
+ }
+}
+if(count)return; // Um 3/6 reconhecido não pode ser convertido acidentalmente em pausa.
+const core=g.k.filter(q=>q.k!='D'),nd=g.k.length-core.length;if(!core.length)return;
+const c={x0:Math.min(...core.map(q=>q.x0)),x1:Math.max(...core.map(q=>q.x1)),y0:Math.min(...core.map(q=>q.y0)),y1:Math.max(...core.map(q=>q.y1))};c.w=c.x1-c.x0;c.h=c.y1-c.y0;c.cx=(c.x0+c.x1)/2;c.cy=(c.y0+c.y1)/2;
+const m=mAt(c.cx,c.cy);if(m<0)return;const Y=y0(pos(m).r);if(Math.abs(c.cy-(Y+2*s))>5*s)return;
+// Reconhece uma cabeça X manuscrita: dois traços diagonais cruzados, sem cabeça oval.
+if(core.length===2&&c.w>=.45*s&&c.w<=2.1*s&&c.h>=.45*s&&c.h<=2.1*s){const slope=q=>{const a=q.p[0],b=q.p[q.p.length-1];return (b[1]-a[1])/((b[0]-a[0])||1)};const sl=core.map(slope);if(sl[0]*sl[1]<-.12&&core.every(q=>q.len>=.45*s)){const mm=mAt(c.cx,c.cy);if(mm>=0){out.push({t:'n',x:c,base:1,xnote:1});return}}}
+const pl=core.reduce((a,q)=>a+q.len,0);let d=0;
+const dots=g.k.filter(q=>q.k==='D');
+// Pontos manuscritos podem ser classificados como traços comuns; detecta também marcas muito curtas junto à haste.
+const tiny=g.k.filter(q=>q!==core[0]&&q.w<=.8*s&&q.h<=.8*s&&q.len<=1.8*s);
+const dotCount=Math.max(nd,tiny.length);
+const slash=core.some(q=>q.h>=.55*s&&q.w<=2.8*s&&q.len>=.55*s)||(c.h>=.8*s&&c.h<=4.2*s&&c.w<=2.8*s&&pl>=.55*s);
+const compactRest=c.h>=.65*s&&c.h<=4.5*s&&c.w<=3.4*s&&core.length<=5;
+// Pausas curtas são avaliadas antes da pausa de semínima para não a confundirem com colcheia/semicolcheia.
+if(dotCount>=1&&dotCount<=3&&compactRest&&slash){d=dotCount===1?.5:dotCount===2?.25:.125;}
+// Pausas de semibreve/mínima: pequenos traços horizontais.
+else if(c.w>=.55*s&&c.w<=3.8*s&&c.h<=1.65*s&&core.length<=6&&pl>=.35*c.w)d=c.cy<Y+1.55*s?4:2;
+// Pausa curta de colcheia: traço inclinado simples; avaliada antes do zigue-zague de semínima.
+else if(dotCount===0&&core.length===1&&c.h>=.65*s&&c.h<=3.6*s&&c.w>=.12*s&&c.w<=2.8*s&&pl<=2.2*Math.hypot(c.w,c.h)&&!(c.h>=1.25*s&&c.w>=.35*s&&pl>=.95*c.h))d=.5;
+// Pausa de semínima: zigue-zague ou traço irregular vertical, sem pontos laterais.
+else if(nd===0&&tiny.length===0&&c.h>=1.25*s&&c.h<=4.8*s&&c.w>=.22*s&&c.w<=2.8*s&&core.length<=7&&pl>=.75*c.h)d=1;
+if(d)out.push({t:'r',x:c,base:d})});
+// Propaga a indicação de tercina às três notas vizinhas mais próximas no mesmo compasso.
+const tagged=out.filter(o=>o.t==='n'&&o.tuplet===3);tagged.forEach(mark=>{const peers=out.filter(o=>o.t==='n'&&o.x&&o!==mark&&Math.abs(o.x.cx-mark.x.cx)<5*L.s&&Math.abs(o.x.cy-mark.x.cy)<2.5*L.s);});
+// Evita que os dois traços da ghost note ou marcas residuais do X sejam convertidos numa pausa vizinha.
+const xnotes=out.filter(o=>o.t==='n'&&o.xnote);for(let i=out.length-1;i>=0;i--){const o=out[i];if(o.t!=='r')continue;if(xnotes.some(x=>Math.abs(x.x.cx-o.x.cx)<1.8*s&&Math.abs(x.x.cy-o.x.cy)<2.2*s))out.splice(i,1)}
+const u0=undo.slice(),r0=redo.slice();snap();let n=0;const pl=[];out.forEach(o=>{const h=o.x,m=mAt(h.cx,h.cy);if(m<0)return;const written=o.base*(o.dot?1.5:1),ratio=o.tuplet?2/3:1,d=written*ratio,q=o.tuplet?(o.base>=.5?3:o.base>=.25?6:12):(d<.2?8:d<.5?4:2);let b=Math.max(0,Math.round(bRaw(m,h.cx)*q)/q);o.m=m;o.d=d;o.written=written;o.b=b;pl.push(o)});
+// As notas de cada grupo irregular recebem posições exatas e consecutivas; a coordenada
+// horizontal define apenas o início do grupo, evitando arredondamentos independentes.
+const tgm=new Map();pl.filter(o=>o.tg).forEach(o=>{if(!tgm.has(o.tg))tgm.set(o.tg,[]);tgm.get(o.tg).push(o)});
+tgm.forEach(a=>{a.sort((p,q)=>p.x.cx-q.x.cx);if(a.length!==a[0].tuplet)return;let b=a[0].b;for(const o of a){o.b=b;b+=o.d}});
+const gm=new Map();pl.forEach(o=>{if(o.t=='n'&&o.gp){if(!gm.has(o.gp))gm.set(o.gp,[]);gm.get(o.gp).push(o)}});
+gm.forEach(a=>{a.sort((p,q)=>p.x.cx-q.x.cx);if(a.length<2||a.some(o=>o.m!=a[0].m))return;for(let i=1;i<a.length;i++){const p=a[i-1],c=a[i];if(pl.some(r=>r.t=='r'&&r.m==c.m&&r.x.cx>p.x.cx&&r.x.cx<c.x.cx))continue;const nbp=p.b+p.d;if(nbp+c.d>mb()+1e-9)break;c.b=nbp}});
+// Uma quiáltera é uma unidade lógica: se houver colisão ou falta de espaço,
+ // rejeitamos o grupo inteiro, nunca inserimos apenas parte das notas.
+ const blockedTuplets=new Set(),tuplePlans=new Map();
+ pl.filter(o=>o.tg).forEach(o=>{if(!tuplePlans.has(o.tg))tuplePlans.set(o.tg,[]);tuplePlans.get(o.tg).push(o)});
+ tuplePlans.forEach((group,tg)=>{
+  group.sort((a,b)=>a.b-b.b);
+  const m=group[0].m,complete=group.length===group[0].tuplet&&group.every(o=>o.m===m);
+  const start=group[0].b,end=Math.max(...group.map(o=>o.b+o.d));
+  const overlaps=S.notes.some(v=>v.m===m&&group.some(o=>o.b<v.b+(+v.d||0)-1e-8&&o.b+o.d>v.b+1e-8));
+  if(!complete||start<0||end>mb()+1e-8||usedInBar(m)+group.reduce((a,o)=>a+o.d,0)>mb()+1e-8||overlaps)blockedTuplets.add(tg);
+ });
+ let rejected=0;pl.sort((a,b)=>a.m-b.m||a.b-b.b||a.x.cx-b.x.cx).forEach(o=>{
+  if(o.tg&&blockedTuplets.has(o.tg)){rejected++;return;}const h=o.x,r=pos(o.m).r,p=o.t=='n'?dOf(r,h.cy):0;if(S.notes.some(v=>v.m==o.m&&Math.abs(v.b-o.b)<1e-6&&v.p==p&&!!v.r==(o.t=='r')))return;
+ // Align to the next available rhythmic position if the handwritten x-position collides with existing notes.
+ let b=o.b;const existing=S.notes.filter(v=>v.m===o.m).sort((a,b)=>a.b-b.b);if(existing.some(v=>Math.abs(v.b-b)<1e-6)&&o.tg){rejected++;return;}if(existing.some(v=>Math.abs(v.b-b)<1e-6)){let cursor=0;for(const v of existing){if(cursor+o.d<=v.b+1e-8)break;cursor=Math.max(cursor,v.b+v.d)}b=cursor;}
+ if(b+o.d>mb()+1e-8||!fitsInBar(o.m,o.d)){rejected++;return;}
+ S.notes.push({id:S.id++,m:o.m,b,d:o.d,p,a:o.a==null?null:o.a,r:o.t=='r'?1:0,x:o.xnote?1:0,tuplet:o.tuplet||null,tg:o.tg||null,tupletBase:o.tupletBase||null});n++});if(!n){undo=u0;redo=r0}if(rejected)T('Compasso completo: '+rejected+' figura(s) não inserida(s).');return n+adjustedTuplets}
+async function chords(G){const s=L.s,gs=[];snap();G.sort((a,b)=>a.x0-b.x0).forEach(k=>{const g=gs[gs.length-1];if(g&&k.x0-g.x1<4*s){g.k.push(k);g.x1=Math.max(g.x1,k.x1);g.y0=Math.min(g.y0,k.y0);g.y1=Math.max(g.y1,k.y1)}else gs.push({k:[k],x0:k.x0,x1:k.x1,y0:k.y0,y1:k.y1})});
+let n=0;for(const g of gs){const m=mAtC((g.x0+g.x1)/2,(g.y0+g.y1)/2);if(m<0)continue;const b=Math.max(0,Math.min(Math.round(bRaw(m,g.x0+s*.6)*2)/2,mb()-.5));let t='?';
+try{const sm=window.claude&&await claude.use('sample');if(sm){const lm=await sm.limits();if(lm.images){const P=3,w=Math.ceil(g.x1-g.x0+16),h=Math.ceil(g.y1-g.y0+16),c=document.createElement('canvas');c.width=w*P;c.height=h*P;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.strokeStyle='#000';x.lineWidth=2.5*P;x.lineCap=x.lineJoin='round';g.k.forEach(k=>{x.beginPath();k.p.forEach((p,i)=>x[i?'lineTo':'moveTo']((p[0]-g.x0+8)*P,(p[1]-g.y0+8)*P));x.stroke()});
+const bl=await new Promise(r=>c.toBlob(r,'image/png')),r=await sm('A imagem mostra uma cifra de acorde manuscrita. Leia com cuidado a fundamental A-G, acidentes #/b, qualidade, extensões, alterações e baixo após barra. Exemplos: C, Cm, C7, Cmaj7, C7M, Cm7, CmMaj7, Cdim7, Cø7, Caug, Csus4, C6, C9, C13, C7(b9), C7(#9), C7(b13), C7(#11), C7alt, C/E, F#m7(b5), Bbmaj7/D. Não invente caracteres. Responda somente com a cifra em texto simples; se não tiver certeza, responda ?.',{images:[bl],modelTier:'quick',cache:false});t=cfix((r.text||'?').trim().split(/\s+/)[0])}}}catch(e){ERR=(e&&(e.code||e.message))||'erro'}
+S.chords=S.chords||[];let c=S.chords.find(q=>q.m==m&&q.b==b);if(!c){c={id:S.id++,m,b,t};S.chords.push(c)}else if(t!='?')c.t=t;c.pending=1;cq.push(c);n++}if(cq.length&&$('#ce').style.display!='block')editChord(cq.shift());return n}
+const rec=async()=>{ictx.setTransform(1,0,0,1,0,0);ictx.clearRect(0,0,ik.width,ik.height);const B=batch;batch=[];const ch=[],rs=[];B.forEach(k=>{const cy=(k.y0+k.y1)/2,m=mAtC((k.x0+k.x1)/2,cy);if(k.ch||(m>=0&&cy<y0(pos(m).r)-2.2*L.s))ch.push(k);else rs.push(k)});
+const nr=(a,b)=>a.x0<=b.x1+.8*L.s&&a.x1>=b.x0-.8*L.s&&a.y0<=b.y1+.8*L.s&&a.y1>=b.y0-.8*L.s;for(let i=rs.length-1;i>=0;i--){const k=rs[i],m=mAtC((k.x0+k.x1)/2,(k.y0+k.y1)/2);if(ch.length&&m>=0&&k.y1<y0(pos(m).r)&&ch.some(c=>nr(k,c)))ch.push(rs.splice(i,1)[0])}
+const n=recog(rs);let c=0;if(ch.length){T('Lendo cifra…');c=await chords(ch)}if(n||c){chg();if(!ERR)T((n?n+' símbolo(s) reconhecido(s)':'')+(n&&c?' e ':'')+(c?c+' cifra(s)':''))}else T('Nada reconhecido: escreva maior e mais claro, ou use o modo Toque');if(c&&!window.claude)T('Leitura automática indisponível aqui: digite a cifra no quadro');else if(ERR){T('Cifra não lida automaticamente ('+ERR+'). Use "Ativar leitura de cifras" na aba Escrita ou digite no quadro.');ERR=''}};
+/* ===== entrada por caneta ===== */
+let drawing=null,pan=null,drag=null,lastPen=0,erasing=0,penDown=0,pinch=null,navTool=null;const TP=new Map();
+let RC;const xy=e=>{const r=RC||ik.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+const hit=(x,y)=>S.notes.find(n=>{const q=npos(n);return Math.abs(q.x-x)<L.s*1.1&&Math.abs(q.y-y)<L.s*1.1});
+const er=(x,y)=>{const k=S.notes.length;S.notes=S.notes.filter(n=>{const q=npos(n);return!(Math.abs(q.x-x)<L.s&&Math.abs(q.y-y)<L.s*1.2)});if(S.notes.length!=k)chg()};
+function tapChordRhythm(x,y){const m=mAtC(x,y);if(m<0)return;const d=+$('#crdur').value||1,q=Math.max(.125,d),b=Math.max(0,Math.min(Math.round(bRaw(m,x)/q)*q,mb()-d));S.cr=S.cr||[];const old=S.cr.find(v=>v.m===m&&Math.abs(v.b-b)<1e-7);snap();if(old){S.cr=S.cr.filter(v=>v!==old);T('Batida apagada')}else{S.cr.push({id:S.id++,m,b,d});T('Batida de cifra adicionada')}chg()}
+function tapAdd(x,y){const m=mAt(x,y);if(m<0)return;const r=pos(m).r;if(Math.abs(y-(y0(r)+2*L.s))>6.2*L.s)return;const d=cur.base*(cur.dot?1.5:1);if(!fitsInBar(m,d)){T('Compasso completo ('+mb()+' tempos). Remova uma figura ou use outro compasso.');return;}snap();const q=d<.2?8:d<.5?4:2;let b=Math.round(bRaw(m,x)*q)/q;b=Math.max(0,b);if(b+d>mb()+1e-8){T('Essa figura ultrapassa o limite do compasso.');return;}S.notes.push({id:S.id++,m,b,d,p:dOf(r,y),a:cur.a,r:cur.r,x:cur.x?1:0});chg()}
+ik.onpointerdown=e=>{const t=Date.now();if(e.pointerType=='pen'){lastPen=t;penDown=1}
+// Ao voltar à pauta, recolhe as paletas para devolver toda a área à escrita.
+$('#figPalette').classList.remove('show');$('#navPalette').classList.remove('show');wrap.classList.remove('figopen','navopen');
+if(navTool){e.preventDefault();const r=ik.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,m=mAt(x,y);if(m>=0){snap();if(navTool=='delete'){const old=S.nav.length;S.nav=S.nav.filter(q=>q.m!=m);T(old==S.nav.length?'Nenhuma marcação nesse compasso':'Marcação apagada')}else{const i=S.nav.findIndex(q=>q.m==m&&q.type==navTool);if(i>=0)S.nav.splice(i,1);else S.nav.push({type:navTool,m});T('Marcação '+(i>=0?'removida':'adicionada')+' no compasso '+(m+1))}chg()}navTool=null;ui();return}
+if(e.pointerType=='touch'){if($('#po').checked&&(penDown||t-lastPen<600))return;if(e.isPrimary){TP.clear();pinch=null}TP.set(e.pointerId,{x:e.clientX,y:e.clientY});try{ik.setPointerCapture(e.pointerId)}catch(_){}
+if(TP.size>=2){drawing=null;drag=null;pan=null;erasing=0;RC=null;startPinch();return}
+if($('#po').checked&&mode!=='crh'){pan={y:e.clientY,x:e.clientX,sy:wrap.scrollTop,sx:wrap.scrollLeft};return}}
+ik.setPointerCapture(e.pointerId);RC=ik.getBoundingClientRect();const[x,y]=xy(e);let md=mode;if(e.pointerType=='pen'&&(e.buttons&32))md='era';erasing=md=='era';
+if(md=='pen'||md=='chd'){clearTimeout(tmr);drawing={p:[[x,y]],x0:x,x1:x,y0:y,y1:y,len:0,ch:md=='chd'};ictx.setTransform(dpr,0,0,dpr,0,0);ictx.strokeStyle='#f2d675';ictx.lineCap=ictx.lineJoin='round'}
+else if(md=='tap')tapAdd(x,y);else if(md=='crh')tapChordRhythm(x,y);
+else if(md=='sel'){const cc=(S.chords||[]).find(c=>{const r=pos(c.m).r;return Math.abs(xOf(c.m,c.b)+L.s-x)<L.s*2.2&&Math.abs(y0(r)-L.s*3.9-y)<L.s*1.4});if(cc){editChord(cc);return}const h=hit(x,y);if(h){if(!sel.has(h.id)){if(!e.shiftKey)sel.clear();sel.add(h.id)}drag={x,y,s:0,o:S.notes.filter(n=>sel.has(n.id)).map(n=>({id:n.id,p:n.p,m:n.m,b:n.b}))}}else{sel.clear();const m=mAt(x,y);if(m>=0){startM=m}}draw()}
+else if(erasing){snap();er(x,y)}};
+ik.onpointermove=e=>{if(e.pointerType=='pen')lastPen=Date.now();
+if(pinch){if(TP.has(e.pointerId)){TP.set(e.pointerId,{x:e.clientX,y:e.clientY});movePinch()}return}
+if(e.pointerType=='touch'&&TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});
+if(pan){wrap.scrollTop=pan.sy-(e.clientY-pan.y);wrap.scrollLeft=pan.sx-(e.clientX-pan.x);return}
+if(!drawing&&!drag&&!(erasing&&e.buttons))return;const[x,y]=xy(e);
+if(drawing){let cs=e.getCoalescedEvents?e.getCoalescedEvents():[];if(!cs.length)cs=[e];for(const c of cs){const[a,b]=xy(c),q=drawing.p[drawing.p.length-1];ictx.lineWidth=+$('#wi').value*(.45+ +$('#se').value*1.1*(c.pressure||.5));ictx.beginPath();ictx.moveTo(q[0],q[1]);ictx.lineTo(a,b);ictx.stroke();drawing.p.push([a,b]);drawing.len+=Math.hypot(a-q[0],b-q[1]);drawing.x0=Math.min(drawing.x0,a);drawing.x1=Math.max(drawing.x1,a);drawing.y0=Math.min(drawing.y0,b);drawing.y1=Math.max(drawing.y1,b)}}
+else if(drag){if(!drag.s){snap();drag.s=1}const dp=Math.round((drag.y-y)/(L.s/2)),db=Math.round((x-drag.x)/L.mw*mb()*2)/2;drag.o.forEach(o=>{const n=S.notes.find(q=>q.id==o.id);if(!n)return;if(!n.r)n.p=o.p+dp;const a=Math.max(0,Math.min(S.nm*mb()-n.d,o.m*mb()+o.b+db));n.m=Math.floor(a/mb()+1e-9);n.b=a-n.m*mb()});draw()}
+else if(erasing&&e.buttons)er(x,y)};
+ik.onpointerup=ik.onpointercancel=e=>{if(e&&e.pointerType=='pen')penDown=0;if(e&&e.pointerType=='touch'){TP.delete(e.pointerId);if(pinch){if(TP.size<2)endPinch();return}}RC=null;if(pan){pan=null;return}if(drawing){if(drawing.len>1.2){batch.push(drawing);clearTimeout(tmr);tmr=setTimeout(rec,+$('#de').value*(drawing.ch?1.5:1))}else{const cc=chordAt(drawing.x0,drawing.y0);if(cc)editChord(cc);else if(drawing.ch)newChord(drawing.x0,drawing.y0);else{const mm=mAt(drawing.x0,drawing.y0);if(mm>=0&&drawing.y0>=y0(pos(mm).r)-.5*L.s){drawing.len=Math.max(drawing.len,1);batch.push(drawing);clearTimeout(tmr);tmr=setTimeout(rec,+$('#de').value)}}}drawing=null}if(drag){drag=null;chg()}erasing=0};
+/* ===== zoom ===== */
+function setZoom(nz,cy){nz=Math.max(.5,Math.min(3.2,nz));if(Math.abs(nz-z)<.004)return;clearTimeout(tmr);if(batch.length)rec();const H0=$('#cv').offsetHeight||1,fy=(wrap.scrollTop+cy)/H0;z=nz;size();const H1=$('#cv').offsetHeight;wrap.scrollTop=Math.max(0,fy*H1-cy)}
+function startPinch(){const p=[...TP.values()];pinch={d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1,z:z,raf:0};if(drawing)drawing=null;clearTimeout(tmr);if(batch.length)rec()}
+function movePinch(){if(!pinch||pinch.raf)return;pinch.raf=requestAnimationFrame(()=>{if(!pinch)return;pinch.raf=0;const p=[...TP.values()];if(p.length<2)return;const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),r=wrap.getBoundingClientRect();setZoom(pinch.z*d/pinch.d,(p[0].y+p[1].y)/2-r.top)})}
+function endPinch(){if(pinch&&pinch.raf)cancelAnimationFrame(pinch.raf);pinch=null;T('Zoom '+Math.round(z*100)+'%')}
+/* ===== reprodução ===== */
+let AC,master,mg,instBus,instPan,metroBus,nk=0,playing=0,t0,total,raf,playBeats=[];
+const mixDefaults={instrument:.8,pan:0,metro:.8,master:.8,instrumentMute:false,instrumentSolo:false,metroMute:false,masterMute:false};
+S.mixer=Object.assign({},mixDefaults,S.mixer||{});
+const dbOf=v=>v<=.0001?"−∞ dB":(20*Math.log10(v)).toFixed(1)+" dB";
+const smooth=(param,value)=>{if(!AC||!param)return;const now=AC.currentTime;try{const current=param.value;param.cancelScheduledValues(now);param.setValueAtTime(current,now);param.linearRampToValueAtTime(Math.max(0,value),now+.035)}catch(_){param.value=Math.max(0,value)}};
+function mixerUI(){const m=S.mixer;["mixInstrument","mixPan","mixMetro","mixMaster"].forEach((id,i)=>{$("#"+id).value=[m.instrument,m.pan,m.metro,m.master][i]});$("#mixInstrumentDb").textContent=dbOf(m.instrument);$("#mixMetroDb").textContent=dbOf(m.metro);$("#mixMasterDb").textContent=dbOf(m.master);$("#mixMute").classList.toggle("active",m.instrumentMute);$("#mixSolo").classList.toggle("active",m.instrumentSolo);$("#mixMetroMute").classList.toggle("active",m.metroMute);$("#mixMasterMute").classList.toggle("active",m.masterMute);$("#mixInstrumentName").textContent=INS[S.ins][0].toUpperCase()}
+function applyMixer(){if(!AC)return;const m=S.mixer;const solo=m.instrumentSolo; smooth(instBus?.gain,m.instrumentMute?0:m.instrument);smooth(instPan?.pan,m.pan);smooth(metroBus?.gain,m.metroMute||solo?0:m.metro);smooth(master?.gain,m.masterMute||$("#mu").checked?0:m.master)}
+function note(k,t,d,ghost=false){const I=INS[S.ins],o=AC.createOscillator(),f=AC.createBiquadFilter(),g=AC.createGain();o.type=I[4];o.frequency.value=440*2**((k-69)/12);f.type='lowpass';f.frequency.value=ghost?Math.min(I[5],750):I[5];o.connect(f);f.connect(g);g.connect(instBus||master);
+if(ghost){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.105,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.065);o.start(t);o.stop(t+.075);return}
+g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.012);
+o.start(t);if(I[6]<.8){g.gain.setTargetAtTime(.0001,t+.02,I[6]*.4);o.stop(t+d+1.2)}else{g.gain.setValueAtTime(.3,t+Math.max(d-.05,.05));g.gain.linearRampToValueAtTime(.0001,t+d+.1);o.stop(t+d+.15)}}
+function click(t,ac){const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=ac?1600:1100;o.connect(g);g.connect(mg);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.45,t+.003);g.gain.exponentialRampToValueAtTime(.001,t+.07);o.start(t);o.stop(t+.09)}
+function stop(){cancelAnimationFrame(raf);if(master)master.disconnect();if(mg)mg.disconnect();if(instBus)instBus.disconnect();if(instPan)instPan.disconnect();playing=0;ph.style.display='none';$('#pl').textContent='▶';$('#pl2').textContent='▶ Tocar'}
+function playOrder(){const N=S.nm,nav=S.nav||[],find=(type)=>nav.filter(q=>q.type==type).map(q=>q.m).sort((a,b)=>a-b),starts=find('repeat-start'),ends=find('repeat-end'),seg=find('segno')[0],ds=find('ds-coda')[0],toc=find('to-coda')[0],coda=find('coda')[0],ranges=['ending1','ending2'].map(k=>{const a=find(k+'-start')[0],b=find(k+'-end').find(x=>x>=a);return a==null||b==null?null:{a,b,k}}).filter(Boolean),passes={},done=new Set(),out=[];let m=startM,guard=0,dsJumped=false,codaJumped=false;while(m<N&&guard++<N*12){const active=starts.filter(x=>x<=m),rs=active.length?active[active.length-1]:0,pass=passes[rs]||0,range=ranges.find(q=>m>=q.a&&m<=q.b);if(range&&((range.k=='ending1'&&pass>0)||(range.k=='ending2'&&pass==0))){if(range.k=='ending2'&&pass==0&&ends.includes(range.b)){if(!(rs in passes))passes[rs]=0;if(passes[rs]===0){passes[rs]=1;m=rs;continue}}m=range.b+1;continue}out.push(m);if(!dsJumped&&ds===m&&seg!=null){dsJumped=true;m=seg;continue}if(dsJumped&&!codaJumped&&toc===m&&coda!=null){codaJumped=true;m=coda;continue}if(ends.includes(m)){if(!(rs in passes))passes[rs]=0;if(passes[rs]===0){passes[rs]=1;m=rs;continue}passes[rs]=2}m++}return out}
+function play(){stop();try{resolve();const order=playOrder(),ns=S.notes.filter(n=>!n.r&&order.includes(n.m));if(!ns.length&&!$('#me').checked){T('Não há notas para tocar a partir do compasso '+(startM+1)+' (ou ligue o metrônomo)');return}
+AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state!='running')AC.resume();master=AC.createGain();master.gain.value=0;master.connect(AC.destination);instBus=AC.createGain();instBus.gain.value=1;instPan=AC.createStereoPanner?AC.createStereoPanner():null;if(instPan){instBus.connect(instPan);instPan.connect(master)}else{instPan=null;instBus.connect(master)}metroBus=AC.createGain();metroBus.connect(master);mg=metroBus;applyMixer();nk=0;const spb=60/S.tempo,now=AC.currentTime+.15,at=new Map();order.forEach((m,i)=>{if(!at.has(m))at.set(m,[]);at.get(m).push(i)});total=order.length*mb()*spb;ns.forEach(n=>{for(const i of at.get(n.m)||[]){const beat=i*mb()+n.b;note(mid(n),now+beat*spb,n.d*spb*.95,!!n.x)}});playBeats=order.map(m=>m);t0=now;playing=1;$('#pl').textContent='■';$('#pl2').textContent='■ Parar';tick()}catch(e){stop();T('Não foi possível iniciar o áudio: '+((e&&e.message)||e))}}
+function tick(){const el=AC.currentTime-t0;const sp=60/S.tempo;if($('#me').checked){const nb=playBeats.length*mb();while(nk<nb-1e-9&&t0+nk*sp<AC.currentTime+.25){const tc=t0+nk*sp;if(tc>=AC.currentTime-.03){const q=nk%mb();click(tc,q<1e-6||mb()-q<1e-6)}nk++}}else nk=Math.max(nk,Math.ceil((AC.currentTime-t0)/sp));if(el>=total+.3){if($('#lp').checked)return play();return stop()}
+const beat=Math.max(0,el/sp),ix=Math.min(playBeats.length-1,Math.floor(beat/mb())),m=playBeats[ix]||startM,b=beat%mb(),r=pos(m).r;ph.style.cssText='display:block;left:'+(xOf(m,b)-1)+'px;top:'+(y0(r)-L.s)+'px;height:'+L.s*6+'px';const ty=y0(r)-L.s*3;if(ty<wrap.scrollTop||y0(r)+L.s*6>wrap.scrollTop+wrap.clientHeight)wrap.scrollTop=Math.max(0,ty);raf=requestAnimationFrame(tick)}
+/* ===== exportação ===== */
+const ST=[[4,'whole',0],[3,'half',1],[2,'half',0],[1.5,'quarter',1],[1,'quarter',0],[.75,'eighth',1],[.5,'eighth',0],[.375,'16th',1],[.25,'16th',0],[.1875,'32nd',1],[.125,'32nd',0]],pc=d=>ST.find(q=>q[0]<=d+1e-9);
+function xml(){resolve();const E=new TextEncoder(),I=INS[S.ins];
+const nx=(n,q,ch)=>{const tu=n&&n.tuplet&&n.tupletBase,typ=tu?pc(n.tupletBase):q,dur=tu?Math.round(n.d*24):Math.round(q[0]*24),tg=tu?S.notes.filter(v=>v.tg===n.tg).sort((a,b)=>a.b-b.b):[],first=tu&&tg[0]&&tg[0].id===n.id,last=tu&&tg[tg.length-1]&&tg[tg.length-1].id===n.id;return '<note>'+(ch?'<chord/>':'')+(n?'<pitch><step>'+'CDEFGAB'[n.p%7]+'</step>'+(n.f?'<alter>'+n.f+'</alter>':'')+'<octave>'+Math.floor(n.p/7)+'</octave></pitch>':'<rest/>')+'<duration>'+dur+'</duration><voice>1</voice><type>'+typ[1]+'</type>'+(tu?'<time-modification><actual-notes>'+n.tuplet+'</actual-notes><normal-notes>'+(n.tuplet===6?4:2)+'</normal-notes></time-modification>':'')+(typ[2]?'<dot/>':'')+(n&&n.a!=null?'<accidental>'+['flat','natural','sharp'][n.a+1]+'</accidental>':'')+(n&&n.x?'<notehead>x</notehead>':'')+(tu?'<notations>'+(first?'<tuplet type="start" number="1"/>':'')+(last?'<tuplet type="stop" number="1"/>':'')+'</notations>':'')+'</note>'};
+const rs=g=>{let o='',q;while(g>=.125-1e-9&&(q=pc(g))){o+=nx(null,q,0);g-=q[0]}return o};
+let o='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd"><score-partwise version="3.1"><work><work-title>'+S.t.replace(/[<>&"]/g,'')+'</work-title></work><part-list><score-part id="P1"><part-name>'+I[0]+'</part-name></score-part></part-list><part id="P1">';
+for(let m=0;m<S.nm;m++){o+='<measure number="'+(m+1)+'">';
+if(!m)o+='<attributes><divisions>24</divisions><key><fifths>'+S.key+'</fifths></key><time><beats>'+S.ts[0]+'</beats><beat-type>'+S.ts[1]+'</beat-type></time><clef><sign>'+S.clef+'</sign><line>'+{G:2,F:4,C:3}[S.clef]+'</line></clef>'+(I[3]?'<transpose><chromatic>0</chromatic><octave-change>-1</octave-change></transpose>':'')+'</attributes><direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>'+S.tempo+'</per-minute></metronome></direction-type><sound tempo="'+S.tempo+'"/></direction>';
+const nv=(S.nav||[]).filter(q=>q.m==m),words={'ds-coda':'D.S. al Coda','to-coda':'Al Coda','coda':'𝄌 Coda','segno':'𝄋 Segno'};nv.filter(q=>words[q.type]).forEach(q=>{o+='<direction placement="above"><direction-type><words>'+words[q.type]+'</words></direction-type></direction>'});const left=[];if(nv.some(q=>q.type=='repeat-start'))left.push('<repeat direction="forward"/>');nv.filter(q=>q.type=='ending1-start'||q.type=='ending2-start').forEach(q=>left.push('<ending number="'+(q.type.includes('1')?'1':'2')+'" type="start"/>'));if(left.length)o+='<barline location="left">'+left.join('')+'</barline>';
+const ns=S.notes.filter(n=>n.m==m),bs=[...new Set(ns.map(n=>n.b))].sort((a,b)=>a-b);let c=0;
+bs.forEach((b,i)=>{if(b>c)o+=rs(b-c);const g=ns.filter(n=>n.b==b),re=g.filter(n=>!n.r),nb=i+1<bs.length?bs[i+1]:mb(),q=pc(Math.min(Math.max(...g.map(n=>n.d)),nb-b));if(!q)return;if(re.length)re.forEach((n,j)=>o+=nx(n,q,j));else o+=nx(null,q,0);c=b+(re.length?Math.max(...re.map(n=>n.d)):q[0])});
+if(c<mb())o+=rs(mb()-c);const right=[];if((S.nav||[]).some(q=>q.m==m&&q.type=='repeat-end'))right.push('<repeat direction="backward"/>');(S.nav||[]).filter(q=>q.m==m&&(q.type=='ending1-end'||q.type=='ending2-end')).forEach(q=>right.push('<ending number="'+(q.type.includes('1')?'1':'2')+'" type="stop"/>'));if(right.length)o+='<barline location="right">'+right.join('')+'</barline>';o+='</measure>'}
+return E.encode(o+'</part></score-partwise>')}
+function midiFile(){const T=480,ev=[];S.notes.forEach(n=>{if(n.r)return;const t=Math.round((n.m*mb()+n.b)*T),d=Math.round(n.d*T*(n.x?.48:.97)),k=mid(n);ev.push([t,1,k,n.x?38:90],[t+d,0,k,0])});resolve();
+ev.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const v=x=>{const o=[x&127];while(x>>=7)o.unshift(x&127|128);return o},us=Math.round(6e7/S.tempo);
+const tr=[0,255,81,3,us>>16&255,us>>8&255,us&255,0,255,88,4,S.ts[0],Math.log2(S.ts[1]),24,8,0,192,INS[S.ins][2]];let last=0;
+ev.forEach(e=>{tr.push(...v(e[0]-last),e[1]?144:128,e[2],e[1]?e[3]:0);last=e[0]});tr.push(0,255,47,0);const n=tr.length;
+return new Uint8Array([77,84,104,100,0,0,0,6,0,0,0,1,T>>8,T&255,77,84,114,107,n>>>24,n>>16&255,n>>8&255,n&255,...tr])}
+const CT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})(),crc=u=>{let c=-1;for(const b of u)c=CT[(c^b)&255]^(c>>>8);return(c^-1)>>>0};
+function zip(fs){const E=new TextEncoder(),P=[],C=[];let o=0;const le=(v,n)=>{const a=[];for(let i=0;i<n;i++)a.push(v>>>(8*i)&255);return a};
+fs.forEach(f=>{const nm=E.encode(f.n),d=f.d,cr=crc(d),h=[80,75,3,4,...le(20,2),...le(0,2),...le(0,2),...le(0,2),...le(33,2),...le(cr,4),...le(d.length,4),...le(d.length,4),...le(nm.length,2),...le(0,2),...nm];
+P.push(new Uint8Array(h),d);C.push(new Uint8Array([80,75,1,2,...le(20,2),...le(20,2),...le(0,2),...le(0,2),...le(0,2),...le(33,2),...le(cr,4),...le(d.length,4),...le(d.length,4),...le(nm.length,2),...le(0,2),...le(0,2),...le(0,2),...le(0,2),...le(0,4),...le(o,4),...nm]));o+=h.length+d.length});
+const cs=C.reduce((a,x)=>a+x.length,0);return new Blob([...P,...C,new Uint8Array([80,75,5,6,0,0,0,0,...le(fs.length,2),...le(fs.length,2),...le(cs,4),...le(o,4),0,0])])}
+function pdfBlob(jp){const E=new TextEncoder(),parts=[],off=[];let len=0;const add=x=>{const b=typeof x=='string'?E.encode(x):x;parts.push(b);len+=b.length},obj=(i,s)=>{off[i]=len;add(i+' 0 obj\n'+s+'\nendobj\n')};add('%PDF-1.4\n');const n=jp.length;
+obj(1,'<</Type/Catalog/Pages 2 0 R>>');obj(2,'<</Type/Pages/Count '+n+'/Kids['+jp.map((_,i)=>(3+i*3)+' 0 R').join(' ')+']>>');
+jp.forEach((j,i)=>{const p=3+i*3,c='q 595 0 0 842 0 0 cm /I Do Q';obj(p,'<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</XObject<</I '+(p+1)+' 0 R>>>>/Contents '+(p+2)+' 0 R>>');
+off[p+1]=len;add((p+1)+' 0 obj\n<</Type/XObject/Subtype/Image/Width '+j.w+'/Height '+j.h+'/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length '+j.d.length+'>>\nstream\n');add(j.d);add('\nendstream\nendobj\n');obj(p+2,'<</Length '+c.length+'>>\nstream\n'+c+'\nendstream')});
+const N=3+n*3,x=len;add('xref\n0 '+N+'\n0000000000 65535 f \n');for(let i=1;i<N;i++)add(String(off[i]).padStart(10,'0')+' 00000 n \n');add('trailer\n<</Size '+N+'/Root 1 0 R>>\nstartxref\n'+x+'\n%%EOF');return new Blob(parts,{type:'application/pdf'})}
+function pdfPages(){const W=1240,H=1754,old=L,l=lay(W,1.9),per=Math.max(1,Math.floor((H-320)/l.rowH)),jp=[];L=l;
+for(let r0=0;r0<l.rows;r0+=per){const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.fillStyle='#000';
+if(!r0){g.font='bold 48px sans-serif';g.textAlign='center';g.fillText(S.t,W/2,90);g.font='24px sans-serif';g.fillText(INS[S.ins][0]+'  ·  ♩ = '+S.tempo,W/2,128)}
+paint(g,l,r0,Math.min(l.rows-1,r0+per-1),'#000',140-r0*l.rowH,0);const b=atob(c.toDataURL('image/jpeg',.92).split(',')[1]),d=new Uint8Array(b.length);for(let i=0;i<b.length;i++)d[i]=b.charCodeAt(i);jp.push({d,w:W,h:H})}
+L=old;return jp}
+async function out(name,data){if(window.claude){let D=null;try{D=await claude.use('downloads')}catch(e){}if(!D)return T('Exportação indisponível neste ambiente');try{await D.save({filename:name,data});T('Arquivo enviado: '+name)}catch(e){T(e.code=='declined'?'Exportação cancelada':'Falha ao exportar ('+(e.code||'erro')+')')}return}
+try{const bl=data instanceof Blob?data:new Blob([data]),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);T('Arquivo baixado: '+name)}catch(e){T('Falha ao exportar')}}
+let ced=null,cq=[];
+function parseChordSymbol(raw){
+ const text=String(raw||'').trim().replace(/\s+/g,'').replace(/[‐‑‒–—]/g,'-');
+ const m=text.match(/^([A-Ga-g])([#b♯♭]?)(.*?)(?:\/([A-Ga-g])([#b♯♭]?))?$/);
+ if(!m)return{ok:false,error:'A cifra deve começar com uma fundamental entre A e G.'};
+ const acc=v=>(v||'').replace(/#/g,'♯').replace(/b/g,'♭');
+ const root=m[1].toUpperCase()+acc(m[2]),bass=m[4]?(m[4].toUpperCase()+acc(m[5])):'';
+ let tail=m[3]||'';
+ tail=tail.replace(/^maj7|^Maj7|^M7/,'7M').replace(/^Δ7/,'7M').replace(/^mmaj7/,'mMaj7');
+ const allowed=/^(?:(?:mMaj7|mM7|7M|m7b5|ø7?|m7|m6|maj7|M7|dim7?|°7?|aug|sus2|sus4|sus|add\d+|m|13|11|9|7|6)?(?:alt)?)(?:\((?:(?:b|#|♭|♯)\d+)(?:,(?:(?:b|#|♭|♯)\d+))*\))?(?:(?:b|#|♭|♯)\d+)*$/;
+ if(!allowed.test(tail))return{ok:false,error:'Qualidade, extensão ou alteração ainda não reconhecida. Confira a grafia.'};
+ const normalized=root+tail+(bass?'/'+bass:'');
+ let quality='Tríade maior';
+ if(/^m(?!Maj|M)/.test(tail))quality='Acorde menor';
+ if(/^(?:7M|maj7|M7)/.test(tail))quality='Acorde maior com sétima maior';
+ if(/^(?:m7|m6|mMaj7|mM7)/.test(tail))quality='Acorde menor com extensão';
+ if(/^(?:ø|m7b5)/.test(tail))quality='Acorde meio-diminuto';
+ if(/^(?:dim|°)/.test(tail))quality='Acorde diminuto';
+ if(/^(?:aug|\+)/.test(tail))quality='Acorde aumentado';
+ if(/^sus/.test(tail))quality='Acorde suspenso';
+ if(/^(?:7|9|11|13)/.test(tail)&&!/^7M/.test(tail))quality='Acorde dominante';
+ const ext=(tail.match(/13|11|9|7|6/)||[])[0]||'—';
+ const alterations=[...(tail.match(/\(([^)]+)\)/)?.[1]||'').split(',').filter(Boolean),...(tail.match(/(?:b|#|♭|♯)\d+/g)||[])];
+ return{ok:true,normalized,root,tail,bass,quality,extension:ext,alterations:[...new Set(alterations)]};
+}
+function chordPreview(){const v=parseChordSymbol($('#cx').value),el=$('#cinfo');if(!v.ok){el.style.color='var(--red)';el.textContent='Revisão necessária: '+v.error;return false}el.style.color='var(--green)';el.textContent=v.normalized+' — '+v.quality+(v.extension!=='—'?' · extensão '+v.extension:'')+(v.alterations.length?' · alterações '+v.alterations.join(', '):'')+(v.bass?' · baixo '+v.bass:'');return true}
+function editChord(c){if(ced&&ced!==c){const o=ced;if(o.pending||o.t==''||o.t=='?')S.chords=S.chords.filter(q=>q!=o)}ced=c;$('#cx').value=c.t=='?'?'':c.t;$('#ce').style.display='block';chordPreview();$('#cx').focus();draw()}
+function closeCE(md){const c=ced;if(!c)return;const raw=$('#cx').value.trim();if(md=='ok'&&!parseChordSymbol(raw).ok){chordPreview();T('Revise a cifra antes de confirmar');return}ced=null;$('#ce').style.display='none';if(md=='ok'&&raw){snap();c.t=parseChordSymbol(raw).normalized;delete c.pending}else if(md=='del'||md=='esc'||(md=='ok'&&!raw)||c.pending){snap();S.chords=S.chords.filter(q=>q!=c)}chg();if(cq.length)editChord(cq.shift())}
+function newChord(x,y){const m=mAtC(x,y);if(m<0)return;const b=Math.max(0,Math.min(Math.round(bRaw(m,x)*2)/2,mb()-.5));snap();const c={id:S.id++,m,b,t:''};S.chords=S.chords||[];S.chords.push(c);editChord(c)}
+function cfix(t){t=String(t||'').trim().split(/\s+/)[0].replace(/[“”"'.,:;]/g,'').replace(/([A-G])#/g,'$1♯').replace(/([A-G])b/g,'$1♭');const v=parseChordSymbol(t);return v.ok?v.normalized:'?'}
+let ERR='';function chordAt(x,y){return(S.chords||[]).find(c=>{const r=pos(c.m).r;return Math.abs(xOf(c.m,c.b)+L.s-x)<L.s*2.2&&Math.abs(y0(r)-L.s*3.9-y)<L.s*1.4})}
+$('#ck').innerHTML=[...'ABCDEFG','♯','♭','m','7','7M','m7','mMaj7','ø7','dim7','aug','sus4','6','9','11','13','alt','b9','#9','b13','#11','add9','/','(',')',',','⌫'].map(k=>'<button class=b style="padding:4px 8px;min-height:32px;margin:0 3px 4px 0" data-k="'+k+'">'+k+'</button>').join('');
+$('#ck').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=$('#cx'),k=b.dataset.k;i.value=k=='⌫'?i.value.slice(0,-1):i.value+k};
+$('#cok').onclick=()=>closeCE('ok');$('#cdel').onclick=()=>closeCE('del');$('#cx').oninput=chordPreview;$('#cx').onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();closeCE('ok')}else if(e.key=='Escape')closeCE('esc')};
+const fn=()=>(S.t.replace(/[^\w\-]+/g,'_')||'partitura');
+/* ===== interface ===== */
+function ui(){$('#mt').classList.toggle('on',$('#me').checked);$('#crdur').style.display=mode==='crh'?'':'none';$$('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m==mode));$$('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav==navTool));$$('#pn [data-v]').forEach(b=>b.classList.toggle('on',+b.dataset.v==cur.base));$('#dt').classList.toggle('on',!!cur.dot);$('#rs').classList.toggle('on',!!cur.r);$$('#pn [data-a]').forEach(b=>b.classList.toggle('on',b.dataset.a===''?cur.a==null:+b.dataset.a===cur.a))}
+function sync(){S.mixer=Object.assign({},mixDefaults,S.mixer||{});$('#ti').value=S.t;$('#ins').value=S.ins;$('#clef').value=S.clef;$('#ts').value=S.ts.join('/');$('#key').value=S.key;$('#nm').value=S.nm;$('#tp').value=S.tempo;$('#tv').textContent=S.tempo;mixerUI()}
+$('#ins').innerHTML=Object.entries(INS).map(([k,v])=>'<option value='+k+'>'+v[0]+'</option>').join('');
+$('#ts').innerHTML=['2/4','3/4','4/4','5/4','3/8','6/8','12/8'].map(v=>'<option>'+v+'</option>').join('');
+$('#key').innerHTML=['Dó♭','Sol♭','Ré♭','Lá♭','Mi♭','Si♭','Fá','Dó','Sol','Ré','Lá','Mi','Si','Fá♯','Dó♯'].map((v,i)=>'<option value='+(i-7)+'>'+v+' maior</option>').join('');
+const ch=(id,f)=>$(id).onchange=$(id).oninput=()=>{snap();f($(id).value);sync();size();save()};
+ch('#ti',v=>S.t=v);ch('#ins',v=>{S.ins=v;S.clef=INS[v][1]});ch('#clef',v=>S.clef=v);ch('#ts',v=>{S.ts=v.split('/').map(Number)});ch('#key',v=>S.key=+v);
+$('#nm').onchange=()=>{snap();S.nm=Math.max(1,Math.min(64,+$('#nm').value||1));S.notes=S.notes.filter(n=>n.m<S.nm);startM=Math.min(startM,S.nm-1);sync();size();save()};
+$('#addBar').onclick=()=>{if(S.nm>=64){T('Limite de 64 compassos atingido');return}snap();S.nm++;sync();size();save();T('Compasso '+S.nm+' adicionado')};
+$('#delBar').onclick=()=>{if(S.nm<=1){T('A partitura precisa ter pelo menos um compasso');return}const last=S.nm-1;if(S.notes.some(n=>n.m===last)||S.chords.some(c=>c.m===last)||S.nav.some(v=>v.m===last)){if(!confirm('O último compasso contém elementos. Excluir mesmo assim?'))return}snap();S.nm--;S.notes=S.notes.filter(n=>n.m<S.nm);S.chords=S.chords.filter(c=>c.m<S.nm);S.cr=(S.cr||[]).filter(c=>c.m<S.nm);S.nav=S.nav.filter(v=>v.m<S.nm);startM=Math.min(startM,S.nm-1);sync();size();save();T('Último compasso excluído')};
+$('#tp').oninput=()=>{S.tempo=+$('#tp').value;$('#tv').textContent=S.tempo;save()};
+const side=$('#side');$('#mn').onclick=$('#mb').onclick=()=>side.classList.toggle('c');
+$$('.tab[data-p]').forEach(t=>t.onclick=()=>{side.classList.remove('c');$$('.tab[data-p]').forEach(x=>x.classList.toggle('on',x==t));$$('.pan').forEach(p=>p.classList.toggle('on',p.id==t.dataset.p));if(t.dataset.p==='pm')mixerShow(true)});
+if(innerWidth<900)side.classList.add('c');
+$$('[data-m]').forEach(b=>b.onclick=()=>{navTool=null;mode=b.dataset.m;ik.style.cursor=mode=='sel'?'default':mode=='chd'?'text':'crosshair';ui();draw()});$$('[data-nav]').forEach(b=>b.onclick=()=>{navTool=navTool==b.dataset.nav?null:b.dataset.nav;ui();T(navTool?'Toque no compasso para colocar a marcação':'Modo de marcação fechado')});$('#navdel').onclick=()=>{navTool='delete';$$('[data-nav]').forEach(b=>b.classList.remove('on'));T('Toque no compasso cuja marcação quer apagar')};$('#figToggle').onclick=()=>{const open=!$('#figPalette').classList.contains('show');$('#navPalette').classList.remove('show');wrap.classList.remove('navopen');$('#figPalette').classList.toggle('show',open);wrap.classList.toggle('figopen',open)};$('#navToggle').onclick=()=>{const open=!$('#navPalette').classList.contains('show');$('#figPalette').classList.remove('show');wrap.classList.remove('figopen');$('#navPalette').classList.toggle('show',open);wrap.classList.toggle('navopen',open)};$$('[data-close]').forEach(b=>b.onclick=()=>{const pal=$('#'+(b.dataset.close=='fig'?'figPalette':'navPalette'));pal.classList.remove('show');if(b.dataset.close=='nav')wrap.classList.remove('navopen');if(b.dataset.close=='fig')wrap.classList.remove('figopen')});$$('[data-fig]').forEach(b=>b.onclick=()=>{cur.base=+b.dataset.fig;cur.r=0;cur.x=0;mode='tap';navTool=null;ui();$$('[data-fig],[data-rest],[data-xnote]').forEach(x=>x.classList.remove('on'));b.classList.add('on');T('Figura escolhida: toque na pauta para inserir')});$$('[data-rest]').forEach(b=>b.onclick=()=>{cur.base=+b.dataset.rest;cur.r=1;cur.x=0;mode='tap';navTool=null;ui();$$('[data-fig],[data-rest],[data-xnote]').forEach(x=>x.classList.remove('on'));b.classList.add('on');T('Pausa escolhida: toque na pauta para inserir')});$$('[data-dot]').forEach(b=>b.onclick=()=>{cur.dot=cur.dot?0:1;b.classList.toggle('on',!!cur.dot);T(cur.dot?'Ponto ativado':'Ponto desativado')});$$('[data-xnote]').forEach(b=>b.onclick=()=>{cur.r=0;cur.x=cur.x?0:1;mode='tap';navTool=null;ui();b.classList.toggle('on',!!cur.x);T(cur.x?'Cabeça X ativada':'Cabeça X desativada')});$$('[data-noteoff]').forEach(b=>b.onclick=()=>{cur.x=0;$$('[data-xnote]').forEach(x=>x.classList.remove('on'));T('Cabeça de nota normal')});
+const ap=f=>{if(!sel.size)return;snap();S.notes.filter(n=>sel.has(n.id)).forEach(f);chg()},baseOf=n=>n.tuplet&&n.tupletBase?n.tupletBase:([3,1.5,.75,.375,.1875].includes(n.d)?n.d/1.5:n.d);
+$('#pn').onclick=e=>{const b=e.target.closest('button');if(!b)return;const D=b.dataset;
+if(D.v)cur.base=+D.v,ap(n=>n.d=cur.base*(cur.dot?1.5:1));
+else if(D.act=='dot'){cur.dot^=1;ap(n=>n.d=baseOf(n)*(cur.dot?1.5:1))}
+else if(D.act=='rest'){cur.r^=1;ap(n=>n.r=cur.r)}
+else if(D.a!=null){cur.a=D.a===''?null:+D.a;ap(n=>n.a=cur.a)}
+else if(D.act=='up')ap(n=>n.p++);else if(D.act=='dn')ap(n=>n.p--);
+else if(D.act=='del'){snap();S.notes=S.notes.filter(n=>!sel.has(n.id));sel.clear();chg()}
+else if(D.act=='cp'){const a=S.notes.filter(n=>sel.has(n.id));if(!a.length)return;const mn=Math.min(...a.map(n=>n.m*mb()+n.b));clip=a.map(n=>({...n,o:n.m*mb()+n.b-mn}));T(a.length+' copiado(s)')}
+else if(D.act=='ps'&&clip.length){snap();sel.clear();clip.forEach(c=>{const a=startM*mb()+c.o,m=Math.floor(a/mb()+1e-9);if(m<S.nm){const n={...c,id:S.id++,m,b:a-m*mb()};delete n.o;S.notes.push(n);sel.add(n.id)}});chg()}
+else if(D.act=='all'){S.notes.forEach(n=>sel.add(n.id));draw()}
+ui()};
+const un=()=>{const had=drawing||batch.length;clearTimeout(tmr);batch=[];drawing=null;if(ictx){ictx.setTransform(1,0,0,1,0,0);ictx.clearRect(0,0,ik.width,ik.height)}if(had){T('Traço descartado');return}
+const c0=JSON.stringify(S);let p=null;while(undo.length){p=undo.pop();if(p!==c0)break;p=null}if(!p){T('Nada para desfazer');return}redo.push(c0);S=JSON.parse(p);S.chords=S.chords||[];S.cr=S.cr||[];S.nav=S.nav||[];sel.clear();sync();size();save();T('Desfeito')},
+rd=()=>{const c0=JSON.stringify(S);let p=null;while(redo.length){p=redo.pop();if(p!==c0)break;p=null}if(!p){T('Nada para refazer');return}undo.push(c0);S=JSON.parse(p);S.chords=S.chords||[];S.cr=S.cr||[];S.nav=S.nav||[];sel.clear();sync();size();save();T('Refeito')};
+$('#un').onclick=un;$('#rd').onclick=rd;$('#zi').onclick=()=>setZoom(z*1.2,wrap.clientHeight/2);$('#zo').onclick=()=>setZoom(z/1.2,wrap.clientHeight/2);
+$('#pl').onclick=$('#pl2').onclick=()=>playing?stop():play();$('#pv').onclick=()=>{startM=Math.max(0,startM-1);mi()};$('#nx').onclick=()=>{startM=Math.min(S.nm-1,startM+1);mi()};
+$('#rc').onclick=()=>{clearTimeout(tmr);rec()};$('#wm').onclick=async()=>{try{const sm=window.claude&&await claude.use('sample');if(!sm)return T('Leitura automática indisponível aqui: digite as cifras no quadro');await sm('Responda apenas: ok',{modelTier:'quick',cache:false});T('Leitura de cifras ativada ✓')}catch(e){T('Não foi possível ativar ('+((e&&e.code)||'erro')+')')}};$('#nw2').onclick=()=>$('#nw').onclick();
+$('#nw').onclick=()=>{snap();S=mkS();sel.clear();startM=0;sync();size();save();T('Nova partitura. Use ↶ para recuperar a anterior.')};
+$('#sv').onclick=()=>out(fn()+'.json',JSON.stringify(S));$('#op').onclick=()=>$('#fi').click();
+$('#fi').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!Array.isArray(j.notes)||!INS[j.ins])throw 0;snap();S=Object.assign(mkS(),j);S.cr=S.cr||[];sel.clear();startM=0;sync();size();save();T('Projeto aberto')}catch(x){T('Arquivo de projeto inválido')}};r.readAsText(f);e.target.value=''};
+$('#ez').onclick=()=>{const E=new TextEncoder();out(fn()+'.zip',zip([{n:'partitura.musicxml',d:xml()},{n:'partitura.mid',d:midiFile()},{n:'projeto.json',d:E.encode(JSON.stringify(S))}]))};
+$('#ep').onclick=()=>{T('Gerando PDF…');setTimeout(()=>out(fn()+'.pdf',pdfBlob(pdfPages())),30)};
+addEventListener('keydown',e=>{if(/INPUT|SELECT/.test(e.target.tagName))return;if((e.ctrlKey||e.metaKey)&&e.key=='z'){e.preventDefault();e.shiftKey?rd():un()}else if(e.key=='Delete'||e.key=='Backspace'){snap();S.notes=S.notes.filter(n=>!sel.has(n.id));sel.clear();chg()}});
+$('#mt').onclick=()=>{$('#me').checked=!$('#me').checked;ui()};$('#me').onchange=ui;$('#mu').onchange=applyMixer;
+wrap.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();const r=wrap.getBoundingClientRect();setZoom(z*Math.exp(-e.deltaY*.01),e.clientY-r.top)},{passive:false});
+['gesturestart','gesturechange'].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
+new ResizeObserver(()=>{if(wrap.clientWidth!=lastW)size()}).observe(wrap);sync();ui();size();
+
+// Mixer events: atualização contínua e automação suave no Web Audio.
+function mixerShow(show){const panel=$("#mixerPanel");panel.classList.toggle("show",!!show);if(show){mixerUI();panel.scrollTop=0}}
+$("#mxbtn").onclick=()=>mixerShow(!$("#mixerPanel").classList.contains("show"));$("#openMixer").onclick=()=>mixerShow(true);$("#closeMixer").onclick=()=>mixerShow(false);
+// Dois toques em área livre recolhem/abrem o menu; a pauta e os controles ficam excluídos.
+let lastFreeTap=0;
+function freeAreaTap(e){
+ const target=e.target;
+ if(target.closest('button,input,select,textarea,canvas,a,summary,details,#mixerPanel,.palette'))return;
+ const now=Date.now();
+ if(now-lastFreeTap<360){lastFreeTap=0;side.classList.toggle('c');}
+ else lastFreeTap=now;
+}
+$("#main").addEventListener('pointerup',freeAreaTap,{passive:true});
+$("#main").addEventListener('dblclick',e=>{if(e.target.closest('button,input,select,textarea,canvas,a,summary,details,#mixerPanel,.palette'))return;side.classList.toggle('c')});
+["mixInstrument","mixPan","mixMetro","mixMaster"].forEach(id=>{
+ const el=$("#"+id);el.addEventListener("input",e=>{
+  const key={mixInstrument:"instrument",mixPan:"pan",mixMetro:"metro",mixMaster:"master"}[id];
+  S.mixer[key]=Number(e.target.value);
+  const read={mixInstrument:"mixInstrumentDb",mixMetro:"mixMetroDb",mixMaster:"mixMasterDb"}[id];
+  if(read)$("#"+read).textContent=dbOf(S.mixer[key]);
+  applyMixer();
+ },{passive:true});
+ el.addEventListener("change",()=>save());
+});
+$("#mixMute").onclick=()=>{S.mixer.instrumentMute=!S.mixer.instrumentMute;mixerUI();applyMixer();save()};
+$("#mixSolo").onclick=()=>{S.mixer.instrumentSolo=!S.mixer.instrumentSolo;mixerUI();applyMixer();save()};
+$("#mixMetroMute").onclick=()=>{S.mixer.metroMute=!S.mixer.metroMute;mixerUI();applyMixer();save()};
+$("#mixMasterMute").onclick=()=>{S.mixer.masterMute=!S.mixer.masterMute;mixerUI();applyMixer();save()};
+$("#mu").addEventListener("change",applyMixer);
+
+mixerUI();
+</script></body></html>
