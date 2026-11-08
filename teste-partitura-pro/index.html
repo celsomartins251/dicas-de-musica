@@ -199,9 +199,10 @@ const emit=g=>{if(g.length<2)return;const up=g.reduce((a,n)=>a+n.p,0)/g.length<b
 const by=(g,u)=>{const o=[];g.forEach(n=>{const k=Math.floor(n.b/u+1e-9),l=o[o.length-1];if(l&&l.k==k)l.g.push(n);else o.push({k,g:[n]})});return o.map(x=>x.g)};
 for(let m=0;m<S.nm;m++){const ns=S.notes.filter(n=>n.m==m&&!n.r).sort((a,b)=>a.b-b.b);let run=[];
 const flush=()=>{if(!run.length)return;
-// Agrupamento sincopado: semicolcheia + colcheia + semicolcheia (uma barra principal contínua e barras secundárias nas pontas).
-let handled=false;for(let j=0;j+2<run.length;j++){const tri=run.slice(j,j+3),ds=tri.map(baseOf),cont=Math.abs(tri[0].b+tri[0].d-tri[1].b)<1e-6&&Math.abs(tri[1].b+tri[1].d-tri[2].b)<1e-6;if(ds[0]===.25&&ds[1]===.5&&ds[2]===.25&&cont){emit(tri);handled=true}}
-if(!handled){const dur=baseOf(run[0]),same=run.every(n=>Math.abs(baseOf(n)-dur)<1e-8);if(same&&run.length>=3&&[.5,.25].includes(dur)){const chunk=(S.ts[1]===4&&S.ts[0]>=4)?4:2;for(let i=0;i<run.length;i+=chunk)emit(run.slice(i,Math.min(i+chunk,run.length)));}else by(run,B).forEach(sg=>{if(B>U&&sg.every(n=>baseOf(n)==.5))emit(sg);else by(sg,U).forEach(emit)})}run=[]};
+// Agrupamento sincopado: semicolcheia + colcheia + semicolcheia.
+// As notas anteriores e posteriores ao padrão também precisam ser agrupadas normalmente.
+const regular=g=>{if(!g.length)return;const dur=baseOf(g[0]),same=g.every(n=>Math.abs(baseOf(n)-dur)<1e-8);if(same&&g.length>=3&&[.5,.25].includes(dur)){const chunk=(S.ts[1]===4&&S.ts[0]>=4)?4:2;for(let i=0;i<g.length;i+=chunk)emit(g.slice(i,Math.min(i+chunk,g.length)));}else by(g,B).forEach(sg=>{if(B>U&&sg.every(n=>baseOf(n)==.5))emit(sg);else by(sg,U).forEach(emit)})};
+let segment=[];for(let j=0;j<run.length;){const tri=run.slice(j,j+3),ds=tri.map(baseOf),cont=tri.length===3&&Math.abs(tri[0].b+tri[0].d-tri[1].b)<1e-6&&Math.abs(tri[1].b+tri[1].d-tri[2].b)<1e-6;if(tri.length===3&&ds[0]===.25&&ds[1]===.5&&ds[2]===.25&&cont){regular(segment);segment=[];emit(tri);j+=3}else{segment.push(run[j]);j++}}regular(segment);run=[]};
 ns.forEach((n,i)=>{const ok=baseOf(n)<=.5&&n.d<4&&!ns.some((q,j)=>j!=i&&Math.abs(q.b-n.b)<1e-6);if(!ok){flush();return}const p=run[run.length-1];if(p&&Math.abs(p.b+p.d-n.b)>1e-6)flush();run.push(n)});flush()}}
 function paint(g,l,r0,r1,ink,oy,scr){beams();const s=l.s,k=S.key,ka=Math.abs(k);g.save();g.translate(0,oy);g.strokeStyle=g.fillStyle=ink;g.lineWidth=Math.max(1,s*.09);
 const F=q=>g.font=q+'px "Noto Music","Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",serif';g.textAlign='left';
