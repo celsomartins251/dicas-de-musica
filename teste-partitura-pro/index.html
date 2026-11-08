@@ -261,7 +261,7 @@ function tupleLabel(g,s){
 // Reconhecimento híbrido inspirado em reconhecedores de notação (não é o SDK proprietário MyScript).
 // Trata cada traço como componente e procura relações espaciais entre cabeça, haste e bandeirola.
 function flagStrokeLevel(o,t,ey,s){
- if(o.u||o===t||o.w<.28*s||o.w>2.8*s||o.h>.0+2.8*s||o.len<.45*s||o.len>9*s)return 0;
+ if(o.u||o===t||o.w<.28*s||o.w>2.8*s||o.h>2.8*s||o.len<.45*s||o.len>9*s)return 0;
  const axisX=t.cx,nearY=ey;
  const a=o.p[0],b=o.p[o.p.length-1];
  const da=Math.hypot(a[0]-axisX,a[1]-nearY),db=Math.hypot(b[0]-axisX,b[1]-nearY);
