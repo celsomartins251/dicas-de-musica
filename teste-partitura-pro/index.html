@@ -258,6 +258,38 @@ function tupleLabel(g,s){
  }
  return 0;
 }
+// Reconhecimento híbrido inspirado em reconhecedores de notação (não é o SDK proprietário MyScript).
+// Trata cada traço como componente e procura relações espaciais entre cabeça, haste e bandeirola.
+function flagStrokeLevel(o,t,ey,s){
+ if(o.u||o===t||o.w<.28*s||o.w>2.8*s||o.h>.0+2.8*s||o.len<.45*s||o.len>9*s)return 0;
+ const axisX=t.cx,nearY=ey;
+ const a=o.p[0],b=o.p[o.p.length-1];
+ const da=Math.hypot(a[0]-axisX,a[1]-nearY),db=Math.hypot(b[0]-axisX,b[1]-nearY);
+ const near=Math.min(da,db),far=Math.max(da,db);
+ // Uma extremidade deve tocar a região terminal da haste; a outra precisa abrir uma alça lateral.
+ if(near>1.25*s||far<.42*s||o.w<.32*s)return 0;
+ const horizontalReach=Math.max(Math.abs(o.x0-axisX),Math.abs(o.x1-axisX));
+ if(horizontalReach<.38*s)return 0;
+ // Rejeita riscos quase retos e verticais: bandeirolas manuscritas apresentam mudança de direção.
+ const path=o.p;let turns=0,last=0;
+ for(let i=2;i<path.length;i++){
+  const dx1=path[i-1][0]-path[i-2][0],dx2=path[i][0]-path[i-1][0];
+  const dy1=path[i-1][1]-path[i-2][1],dy2=path[i][1]-path[i-1][1];
+  const cross=dx1*dy2-dy1*dx2;
+  const sign=Math.abs(cross)>.025*s*s?Math.sign(cross):0;
+  if(sign&&last&&sign!==last)turns++;
+  if(sign)last=sign;
+ }
+ if(turns===0&&o.h<.35*s)return 0;
+ return 1;
+}
+function countStemFlags(t,ey,objects,s){
+ let count=Math.min(4,(t.bm||0)+(t.fl||0));
+ const candidates=objects.filter(o=>!o.u&&o!==t).map(o=>({o,n:flagStrokeLevel(o,t,ey,s)})).filter(v=>v.n);
+ candidates.sort((a,b)=>Math.hypot(a.o.cx-t.cx,a.o.cy-ey)-Math.hypot(b.o.cx-t.cx,b.o.cy-ey));
+ candidates.forEach(v=>{if(count<4){v.o.u=1;count+=v.n}});
+ return Math.min(4,count);
+}
 function recog(B){const s=L.s;let adjustedTuplets=0;if(!B.length)return 0;
 B.forEach(k=>{k.w=k.x1-k.x0;k.h=k.y1-k.y0;k.cx=(k.x0+k.x1)/2;k.cy=(k.y0+k.y1)/2;k.fill=filled(k);k.k=kindOf(k,s)});
 // Detecta a cabeça X antes da classificação de cabeças ovais: dois traços diagonais curtos que se cruzam.
@@ -268,7 +300,7 @@ H.sort((a,c)=>a.cx-c.cx).forEach(h=>{
 const dist=t=>Math.min(Math.abs(t.cx-h.x1),Math.abs(t.cx-h.x0));
 const t=St.filter(t=>!t.u&&t.x0<=h.x1+.6*s&&t.x1>=h.x0-.6*s&&t.y0<=h.y1+.6*s&&t.y1>=h.y0-.6*s).sort((a,c)=>dist(a)-dist(c))[0];let fl=0;
 if(!t&&h.fill&&h.w>=1.45*h.h){const m=mAt(h.cx,h.cy);if(m>=0){const Y=y0(pos(m).r);if(h.cy>Y+.6*s&&h.cy<Y+2.4*s){h.u=1;out.push({t:'r',x:h,base:h.cy<Y+1.5*s?4:2});return}}}
-if(t){t.u=1;fl=(t.bm||0)+(t.fl||0);const ey=t.fe?(t.fe=='t'?t.y0:t.y1):(h.cy>(t.y0+t.y1)/2?t.y0:t.y1);O.forEach(o=>{if(!o.u&&o.h<2.6*s&&o.w<2.6*s&&Math.abs(o.cy-ey)<2*s&&o.cx>t.x0-.6*s&&o.cx<t.x1+2.6*s){o.u=1;fl+=o.len>7.8*s?4:o.len>5.8*s?3:o.len>3.8*s?2:1}})}
+if(t){t.u=1;const ey=t.fe?(t.fe=='t'?t.y0:t.y1):(h.cy>(t.y0+t.y1)/2?t.y0:t.y1);fl=countStemFlags(t,ey,O,s)}
 const dt=D.find(d=>!d.u&&d.w<=.48*s&&d.h<=.48*s&&d.cx>h.x1+.12*s&&d.cx-h.x1<1.35*s&&Math.abs(d.cy-h.cy)<.72*s);if(dt)dt.u=1;
 out.push({t:'n',x:h,base:!t?(h.fill?1:4):fl>=4?.0625:fl==3?.125:fl==2?.25:fl==1?.5:h.fill?1:2,dot:!!dt,gp:t&&t.gp,tuplet:h.tuplet||null})});
 const pool=[...O.filter(o=>!o.u),...St.filter(t=>!t.u),...D.filter(d=>!d.u)].sort((a,c)=>a.x0-c.x0),gs=[],mg=1.55*s;
