@@ -1,0 +1,21 @@
+{
+  "id": "./app-acesso.html",
+  "name": "Celso Martins – Dicas de Música",
+  "short_name": "Celso Martins",
+  "description": "Plataforma de estudos musicais Celso Martins.",
+  "lang": "pt-BR",
+  "start_url": "./app-acesso.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10100e",
+  "theme_color": "#10100e",
+  "icons": [
+    {
+      "src": "./icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
