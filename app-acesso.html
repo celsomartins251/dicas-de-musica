@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10100e">
-  <meta name="description" content="Acesso à plataforma de estudos musicais Celso Martins – Dicas de Música.">
+  <meta name="description" content="Acesso à plataforma de estudos musicais Celso Martins – Dicas de Música.">\n  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Celso Martins">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Acesso | Celso Martins – Dicas de Música</title>
   <style>
     :root{color-scheme:dark;--bg:#10100e;--panel:#191916;--line:#383529;--gold:#d5a928;--gold2:#f2d477;--text:#f4f0e6;--muted:#aaa697;--danger:#ffb4a9;--ok:#a7dfb5}
@@ -94,7 +99,7 @@
     const toggle = document.getElementById('togglePassword');
     let auth = null;
 
-    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = new Date().getFullYear();\n\n    // Mantém a interface instalável sem armazenar páginas autenticadas ou dados de alunos.\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Não foi possível registrar o modo instalável:', error)));\n    }
 
     function showMessage(text, success = false) {
       message.textContent = text;
