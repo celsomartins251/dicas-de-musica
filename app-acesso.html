@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10100e">
+  <meta name="description" content="Acesso à plataforma de estudos musicais Celso Martins – Dicas de Música.">
+  <title>Acesso | Celso Martins – Dicas de Música</title>
+  <style>
+    :root{color-scheme:dark;--bg:#10100e;--panel:#191916;--line:#383529;--gold:#d5a928;--gold2:#f2d477;--text:#f4f0e6;--muted:#aaa697;--danger:#ffb4a9;--ok:#a7dfb5}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100svh;background:radial-gradient(ellipse at 50% 0%,#302819 0,transparent 48%),var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;padding:24px}
+    button,input{font:inherit}
+    .shell{width:min(100%,440px)}
+    .brand{text-align:center;margin-bottom:25px}
+    .mark{width:66px;height:66px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;color:var(--gold2);font:700 26px Georgia,serif;box-shadow:0 0 30px #d5a92818}
+    .brand strong{display:block;font-size:13px;letter-spacing:.16em}
+    .brand span{display:block;color:var(--muted);font-size:12px;letter-spacing:.08em;margin-top:4px}
+    .card{background:linear-gradient(150deg,#1d1c17,#171714);border:1px solid var(--line);border-radius:18px;padding:clamp(22px,6vw,34px);box-shadow:0 22px 70px #0006}
+    .eyebrow{color:var(--gold2);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+    h1{font:700 clamp(29px,7vw,37px)/1.1 Georgia,serif;margin:10px 0 9px;letter-spacing:-.025em}
+    .intro{color:var(--muted);font-size:14px;margin:0 0 25px}
+    form{display:grid;gap:14px}
+    label{display:block;font-size:12px;color:#d5d0c3;margin-bottom:6px}
+    input{width:100%;height:48px;padding:0 13px;background:#10100e;border:1px solid var(--line);border-radius:9px;color:var(--text);outline:none}
+    input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #d5a92820}
+    .password-wrap{position:relative}
+    .password-wrap input{padding-right:76px}
+    .toggle{position:absolute;right:8px;top:7px;height:34px;padding:0 9px;border:0;background:transparent;color:var(--gold2);font-size:12px;cursor:pointer}
+    .submit{height:49px;border:1px solid var(--gold);border-radius:9px;background:var(--gold);color:#17150e;font-weight:750;cursor:pointer;margin-top:4px;transition:background .15s,transform .15s}
+    .submit:hover{background:var(--gold2)}
+    .submit:active{transform:scale(.99)}
+    .submit:disabled{opacity:.65;cursor:wait}
+    .forgot{display:block;margin:2px auto 0;border:0;background:none;color:var(--gold2);font-size:13px;text-decoration:underline;text-underline-offset:4px;cursor:pointer;padding:7px}
+    .message{min-height:20px;font-size:13px;text-align:center;color:var(--danger);margin:0}
+    .message.ok{color:var(--ok)}
+    .foot{text-align:center;color:#898577;font-size:12px;margin-top:20px}
+    .foot a{color:var(--gold2);text-decoration:none}
+    .foot a:hover{text-decoration:underline}
+    .secure{display:flex;align-items:center;justify-content:center;gap:7px;color:#999485;font-size:11px;margin-top:17px}
+    .secure svg{width:14px;height:14px;color:var(--gold2)}
+    @media(max-width:420px){body{padding:18px}.brand{margin-bottom:19px}.mark{width:58px;height:58px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <div class="mark" aria-hidden="true">CM</div>
+      <strong>CELSO MARTINS</strong>
+      <span>DICAS DE MÚSICA · PLATAFORMA DE ESTUDOS</span>
+    </header>
+
+    <section class="card" aria-labelledby="title">
+      <span class="eyebrow">Área de membros</span>
+      <h1 id="title">Bem-vindo de volta.</h1>
+      <p class="intro">Entre com o e-mail e a senha cadastrados para acessar suas aulas, materiais e aplicativos.</p>
+
+      <form id="accessForm" novalidate>
+        <div>
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" autocomplete="username" inputmode="email" placeholder="seuemail@exemplo.com" required>
+        </div>
+        <div>
+          <label for="password">Senha</label>
+          <div class="password-wrap">
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
+            <button class="toggle" id="togglePassword" type="button" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+        </div>
+        <p class="message" id="message" role="status" aria-live="polite"></p>
+        <button class="submit" id="submitButton" type="submit">Entrar na plataforma</button>
+        <button class="forgot" id="forgotButton" type="button">Esqueci minha senha</button>
+      </form>
+      <div class="secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+        Acesso protegido pela autenticação da plataforma
+      </div>
+    </section>
+    <footer class="foot">© <span id="year"></span> Celso Martins · <a href="./index.html">Abrir plataforma pelo navegador</a></footer>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { firebaseConfig } from './firebase-config.js';
+
+    const form = document.getElementById('accessForm');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const message = document.getElementById('message');
+    const submit = document.getElementById('submitButton');
+    const forgot = document.getElementById('forgotButton');
+    const toggle = document.getElementById('togglePassword');
+    let auth = null;
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function showMessage(text, success = false) {
+      message.textContent = text;
+      message.classList.toggle('ok', success);
+    }
+
+    try {
+      if (!firebaseConfig || !firebaseConfig.apiKey) throw new Error('config');
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+    } catch (error) {
+      console.error('Falha ao iniciar autenticação:', error);
+      showMessage('Não foi possível iniciar o acesso. Verifique a configuração da plataforma.');
+      submit.disabled = true;
+    }
+
+    toggle.addEventListener('click', () => {
+      const visible = password.type === 'text';
+      password.type = visible ? 'password' : 'text';
+      toggle.textContent = visible ? 'Mostrar' : 'Ocultar';
+      toggle.setAttribute('aria-label', visible ? 'Mostrar senha' : 'Ocultar senha');
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      showMessage('');
+      if (!auth) return;
+      const userEmail = email.value.trim();
+      const userPassword = password.value;
+      if (!userEmail || !userPassword) {
+        showMessage('Informe seu e-mail e sua senha.');
+        return;
+      }
+      submit.disabled = true;
+      submit.textContent = 'Verificando acesso...';
+      try {
+        await signInWithEmailAndPassword(auth, userEmail, userPassword);
+        showMessage('Acesso confirmado. Abrindo sua área...', true);
+        // A plataforma existente valida a função e o cadastro do usuário no Firestore.
+        // Não duplicamos regras de professor/aluno nesta tela.
+        window.location.replace('./index.html');
+      } catch (error) {
+        console.error('Falha no login:', error);
+        const code = error?.code || '';
+        if (code === 'auth/network-request-failed') showMessage('Sem conexão. Confira a internet e tente novamente.');
+        else if (code === 'auth/too-many-requests') showMessage('Muitas tentativas. Aguarde um pouco e tente novamente.');
+        else if (code === 'auth/invalid-email') showMessage('O formato do e-mail não é válido.');
+        else showMessage('E-mail ou senha incorretos. Confira os dados e tente novamente.');
+        submit.disabled = false;
+        submit.textContent = 'Entrar na plataforma';
+      }
+    });
+
+    forgot.addEventListener('click', async () => {
+      showMessage('');
+      if (!auth) return;
+      const userEmail = email.value.trim();
+      if (!userEmail) {
+        showMessage('Digite seu e-mail para receber o link de redefinição.');
+        email.focus();
+        return;
+      }
+      forgot.disabled = true;
+      try {
+        await sendPasswordResetEmail(auth, userEmail);
+        showMessage('Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.', true);
+      } catch (error) {
+        console.error('Falha ao solicitar redefinição:', error);
+        // Mensagem neutra para não revelar se um e-mail está cadastrado.
+        showMessage('Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.', true);
+      } finally {
+        forgot.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
