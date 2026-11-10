@@ -262,7 +262,7 @@ const a=st?top:mid-8,b=st?bot:mid+8;
 if(i==0)o+=bar(1,a,b,1.4);
 if(m.rs)o+=bar(2,a,b,3)+bar(7,a,b,1)+`<circle cx="11" cy="${(a+b)/2-4}" r="1.6" fill="currentColor"/><circle cx="11" cy="${(a+b)/2+4}" r="1.6" fill="currentColor"/>`;
 o+=m.re?bar(197,a,b,3)+bar(192,a,b,1)+`<circle cx="188" cy="${(a+b)/2-4}" r="1.6" fill="currentColor"/><circle cx="188" cy="${(a+b)/2+4}" r="1.6" fill="currentColor"/>`:bar(199,a,b,1.4);
-if(m.rhythm)o+=`<text x="8" y="${H-3}" font-size="9" fill="var(--acc)" font-family="monospace">${m.rhythm.replace(/[<&]/g,'')}</text>`;
+if(m.rhythm){const ev=parseRhythm(m.rhythm).map(e=>({...e,step:0,b:0}));o+=drawEvs(ev,e=>xt(Math.min(e.t,sl-.5))+5,mid-16,mid-4,{b:0})}
 if(m.note)o+=`<text x="${x0}" y="${m.rhythm?H-13:H-3}" font-size="10.5" font-style="italic" fill="var(--mute)">${m.note.replace(/[<&]/g,'')}</text>`;
 return `<svg viewBox="0 0 200 ${H}" role="img" aria-label="Compasso ${i+1}">${o}</svg>`}
 function R(){const g=$('#chart');g.innerHTML='';$('#tv').innerHTML=(S.title||'Sem título').replace(/[<&]/g,'')+'<small>'+(S.art||'').replace(/[<&]/g,'')+'</small>';S.measures.forEach((m,i)=>{const d=document.createElement('div');d.className='m'+(i==sel?' sel':'');d.innerHTML=svg(m,i,i==sel?ab:-1);d.onclick=e=>{const r=d.getBoundingClientRect(),x0=m.t=='s'?34:10,nb=NB(),xx=(e.clientX-r.left)/r.width*200,yy=(e.clientY-r.top)/r.height*(m.t=='s'?100:76),b=Math.floor((xx-x0)/((184-x0)/nb));sel=i;ab=Math.max(0,Math.min(nb-1,b));if(m.t=='s'&&yy>=44&&yy<=88&&xx>=x0&&xx<=192){const dur=$('#nd')?$('#nd').value:'q',acc=$('#na')?$('#na').value:'',note=staffPitch(yy,m.clef||'treble',acc,dur),a=segs(m.nt,NB());a[ab]=(a[ab]+' '+note).trim();m.nt=a.join(' | ');save()}R();E()};g.appendChild(d)})}
