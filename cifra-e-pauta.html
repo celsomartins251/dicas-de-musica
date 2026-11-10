@@ -184,7 +184,7 @@ header{height:52px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding:6
 </ul>
 
 <h2>11. Limitações conhecidas</h2>
-<p>Ainda não há barras de ligação entre colcheias na pauta (só bandeirolas), articulações (staccato, acento, fermata), dinâmicas, grooves personalizados, biblioteca de acordes de baixo, importação de partituras ou sincronização na nuvem.</p>
+<p>As colcheias e figuras menores são agrupadas automaticamente por tempo quando a sequência permite; articulações (staccato, acento, fermata), dinâmicas, grooves personalizados, biblioteca de acordes de baixo, importação de partituras ou sincronização na nuvem.</p>
 <p><button class="p" id="hx2">← Voltar à partitura</button></p>
 </section>
 <script>
@@ -265,7 +265,7 @@ list.forEach((e,i)=>{
  pv={x:x,y:y,tie:e.tie};
 });
 groups.forEach(g=>{
- const first=g[0],last=g[g.length-1],up=first.up,stemX=v=>v.x+(up?4.8:-4.8),stemY=v=>v.y+(up?-26:26);
+ const first=g[0],last=g[g.length-1],up=first.up,stemX=v=>v.x+(up?4.8:-4.8),stemY=v=>v.y+(up?-(26+(v.fl>2?(v.fl-2)*5:0)):(26+(v.fl>2?(v.fl-2)*5:0)));
  const x1=stemX(first),x2=stemX(last),y1=stemY(first),y2=stemY(last),dx=(x2-x1)||1,yAt=x=>y1+(y2-y1)*(x-x1)/dx;
  o+='<path d="M'+x1+' '+y1+'L'+x2+' '+y2+'" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square"/>';
  for(let level=2;level<=4;level++){
