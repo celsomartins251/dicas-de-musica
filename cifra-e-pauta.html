@@ -236,35 +236,83 @@ function restG(e,x,top){const w=e.cd;if(w=='w')return `<rect x="${x-5}" y="${top
 if(w=='q')return `<path d="M${x-2} ${top+6}l5 6 -5 6 4 5q-4 0 -4 4" fill="none" stroke="currentColor" stroke-width="2"/>`;
 const c=FLG[w];let o=ln(x+3,top+10,x-2-(c-1)*1.2,top+22+(c-1)*5,1.5);for(let k=0;k<c;k++){const cx=x-1.5-k*1.2,cy=top+13+k*5;o+=`<circle cx="${cx}" cy="${cy}" r="2.1" fill="currentColor"/><path d="M${cx+1.5} ${cy-1}q3 0 ${4.5+k*1.2} -4" fill="none" stroke="currentColor" stroke-width="1.2"/>`}return o}
 function drawEvs(list,xf,top,bot,c){
-let o='',pv=null,gs={},beamMap=new Map(),groups=[],run=[];
-const flush=()=>{if(run.length>1)groups.push(run);run=[]};
-list.forEach((e,i)=>{
- if(e.r||!(FLG[e.cd]||0)){flush();return}
- const prev=run.length?run[run.length-1]:null;
- const sameBeat=prev&&prev.e.b===e.b,contiguous=prev&&Math.abs((prev.e.t+prev.e.d)-e.t)<.001;
- if(!sameBeat||!contiguous)flush();
- run.push({e:e,i:i,x:xf(e.t,i),y:bot-(e.step-c.b)*4,up:false,fl:FLG[e.cd]||0});
-});
-flush();groups.forEach(g=>{
- const up=g[0].up,stemX=v=>v.x+(up?4.8:-4.8);
- const headYs=g.map(v=>v.y),beamY=up?Math.min(...headYs)-26:Math.max(...headYs)+26;
- const x1=stemX(g[0]),x2=stemX(g[g.length-1]);
- g.forEach(v=>o+=ln(stemX(v),v.y,stemX(v),beamY,1.2));
- o+='<path d="M'+x1+' '+beamY+'L'+x2+' '+beamY+'" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square"/>';
- for(let level=2;level<=4;level++){
-  let j=0;
-  while(j<g.length){
-   if(g[j].fl<level){j++;continue}
-   let k=j;while(k+1<g.length&&g[k+1].fl>=level)k++;
-   const off=(up?1:-1)*4.5*(level-1);
-   if(k>j){const xa=stemX(g[j]),xb=stemX(g[k]);o+='<path d="M'+xa+' '+(beamY+off)+'L'+xb+' '+(beamY+off)+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>'}
-   else{const v=g[j],sx=stemX(v),toward=j<g.length-1?1:-1,ex=sx+toward*6;o+='<path d="M'+sx+' '+(beamY+off)+'l'+(ex-sx)+' 0" fill="none" stroke="currentColor" stroke-width="2.2"/>'}
-   j=k+1;
+ const base=c&&Number.isFinite(c.b)?c.b:0,mid=(top+bot)/2,items=[],groups=[],used=new Set(),tuplets=new Map();
+ list.forEach((e,i)=>{
+  const x=xf(e.t,i),y=Number.isFinite(e.step)?bot-(e.step-base)*4:bot;
+  items.push({e,i,x,y,fl:FLG[e.cd]||0});
+  if(e.g){const k=e.g.id;if(!tuplets.has(k))tuplets.set(k,{g:e.g,a:x,b:x,n:0});const q=tuplets.get(k);q.a=Math.min(q.a,x);q.b=Math.max(q.b,x);q.n++}
+ });
+ let run=[];
+ const flush=()=>{if(run.length>1){const avg=run.reduce((v,p)=>v+p.y,0)/run.length;groups.push({items:run,up:avg>=mid});run.forEach(p=>used.add(p.i))}run=[]};
+ items.forEach(p=>{
+  if(p.e.r||!p.fl){flush();return}
+  const prev=run.length?run[run.length-1]:null;
+  const sameBeat=prev&&prev.e.b===p.e.b;
+  const contiguous=prev&&Math.abs((prev.e.t+prev.e.d)-p.e.t)<.001;
+  if(!sameBeat||!contiguous)flush();
+  run.push(p);
+ });
+ flush();
+ let o='';
+ items.forEach(p=>{
+  if(p.e.r)return;
+  const y=p.y;
+  for(let ly=top-8;ly>=y-2;ly-=8)o+=ln(p.x-7,ly,p.x+7,ly,1);
+  for(let ly=bot+8;ly<=y+2;ly+=8)o+=ln(p.x-7,ly,p.x+7,ly,1);
+ });
+ const stemData=new Map();
+ groups.forEach(g=>{
+  const sx=p=>p.x+(g.up?4.8:-4.8),ys=g.items.map(p=>p.y);
+  const beamY=g.up?Math.min.apply(null,ys)-25:Math.max.apply(null,ys)+25;
+  g.items.forEach(p=>{if(p.e.cd!=='w')o+=ln(sx(p),p.y,sx(p),beamY,1.25);stemData.set(p.i,{up:g.up,beamY,sx:sx(p)})});
+  const x1=sx(g.items[0]),x2=sx(g.items[g.items.length-1]);
+  o+='<path d="M'+x1+' '+beamY+'L'+x2+' '+beamY+'" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="square"/>';
+  for(let level=2;level<=4;level++){
+   let j=0;
+   while(j<g.items.length){
+    if(g.items[j].fl<level){j++;continue}
+    let k=j;while(k+1<g.items.length&&g.items[k+1].fl>=level)k++;
+    const off=(g.up?1:-1)*4.2*(level-1),yy=beamY+off;
+    if(k>j)o+='<path d="M'+sx(g.items[j])+' '+yy+'L'+sx(g.items[k])+' '+yy+'" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/>';
+    else{const v=g.items[j],toward=j<g.items.length-1?1:-1;o+='<path d="M'+sx(v)+' '+yy+'l'+(toward*7)+' 0" fill="none" stroke="currentColor" stroke-width="2.2"/>'}
+    j=k+1;
+   }
   }
- }
-});
-for(const k in gs){const g=gs[k],y=top-8,mx=(g.a+g.b)/2,df={3:2,5:4,6:4,7:4}[g.n];o+='<path d="M'+(g.a-4)+' '+(y+3)+'V'+y+'H'+(mx-6)+'M'+(mx+6)+' '+y+'H'+(g.b+4)+'V'+(y+3)+'" fill="none" stroke="currentColor" stroke-width="1"/><text x="'+mx+'" y="'+(y+3)+'" font-size="9" font-style="italic" text-anchor="middle" fill="currentColor">'+(g.m==df?g.n:g.n+':'+g.m)+'</text>'}
-return o
+ });
+ items.forEach(p=>{
+  const e=p.e,x=p.x,y=p.y,fl=p.fl;
+  if(e.r){o+=restG(e,x,top);return}
+  let sd=stemData.get(p.i);
+  const up=sd?sd.up:y>=mid;
+  const sx=x+(up?4.8:-4.8),sy=up?y-25:y+25;
+  if(!sd&&e.cd!=='w'){
+   o+=ln(sx,y,sx,sy,1.25);
+   if(fl){
+    for(let k=0;k<fl;k++){
+     const fy=up?sy+4+k*4.5:sy-4-k*4.5;
+     const dir=up?1:-1;
+     o+='<path d="M'+sx+' '+fy+' C'+(sx+dir*13)+' '+(fy+4*dir)+' '+(sx+dir*13)+' '+(fy+11*dir)+' '+(sx+dir*8)+' '+(fy+14*dir)+'" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
+    }
+   }
+  }
+  if(e.l){
+   const hollow=e.cd==='w'||e.cd==='h';
+   o+='<ellipse cx="'+x+'" cy="'+y+'" rx="5.1" ry="3.5" transform="rotate(-20 '+x+' '+y+')" fill="'+(hollow?'var(--paper)':'currentColor')+'" stroke="currentColor" stroke-width="1.35"/>';
+   if(e.acc||e.nat){const a=e.nat?'♮':e.acc===2?'𝄪':e.acc===-2?'𝄫':e.acc===1?'♯':'♭';o+='<text x="'+(x-12)+'" y="'+(y+4)+'" font-size="13" text-anchor="middle" fill="currentColor">'+a+'</text>'}
+  }else{
+   o+='<path d="M'+(x-3)+' '+(y+3)+'L'+(x+3)+' '+(y-3)+'" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>';
+  }
+  for(let d=0;d<(e.dot||0);d++)o+='<circle cx="'+(x+9+d*4)+'" cy="'+(y-1)+'" r="1.25" fill="currentColor"/>';
+  if(e.tie){
+   const next=items.find(q=>q.i>p.i&&!q.e.r&&q.e.l===e.l&&q.e.o===e.o);
+   if(next)o+='<path d="M'+(x+4)+' '+(y+4)+' Q'+((x+next.x)/2)+' '+(y+12)+' '+(next.x-4)+' '+(next.y+4)+'" fill="none" stroke="currentColor" stroke-width="1"/>';
+  }
+ });
+ tuplets.forEach(q=>{
+  const y=top-8,mx=(q.a+q.b)/2,g=q.g,df=({3:2,5:4,6:4,7:4})[g.n];
+  o+='<path d="M'+(q.a-4)+' '+(y+3)+'V'+y+'H'+(mx-6)+'M'+(mx+6)+' '+y+'H'+(q.b+4)+'V'+(y+3)+'" fill="none" stroke="currentColor" stroke-width="1"/><text x="'+mx+'" y="'+(y+3)+'" font-size="9" font-style="italic" text-anchor="middle" fill="currentColor">'+(g.m===df?g.n:g.n+':'+g.m)+'</text>';
+ });
+ return o
 }
 function staffPitch(y,clef,acc,dur){const base={treble:{n:2,o:4},bass:{n:4,o:2},alto:{n:3,o:3}}[clef]||{n:2,o:4};const step=Math.round((80-y)/4),v=base.n+step,oct=base.o+Math.floor(v/7),letter=LI[((v%7)+7)%7];return letter+(acc||'')+oct+dur}
 function parseRhythm(str){const out=[];let pos=0;const re=/(r?)([whqesfu])(\.{0,3})(~?)/gi;let z;while((z=re.exec(str||''))){const base=DUR[z[2].toLowerCase()]||0,dots=z[3].length,d=base*(dots?2-1/Math.pow(2,dots):1);out.push({r:!!z[1],cd:z[2].toLowerCase(),dot:dots,tie:!!z[4],t:pos,d});pos+=d}return out}
