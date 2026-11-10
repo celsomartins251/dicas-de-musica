@@ -245,37 +245,20 @@ list.forEach((e,i)=>{
  if(!sameBeat||!contiguous)flush();
  run.push({e:e,i:i,x:xf(e.t,i),y:bot-(e.step-c.b)*4,up:false,fl:FLG[e.cd]||0});
 });
-flush();groups.forEach(g=>{const avg=g.reduce((v,n)=>v+n.e.step,0)/g.length,up=avg-c.b<4;g.forEach(v=>{v.up=up;beamMap.set(v.i,g)})});
-const xpos=list.map((e,i)=>xf(e.t,i));for(let i=1;i<xpos.length;i++){if(!list[i].r&&!list[i-1].r&&xpos[i]-xpos[i-1]<14)xpos[i]=xpos[i-1]+14;}
-list.forEach((e,i)=>{
- const x=xpos[i];
- if(e.g){const gg=gs[e.g.id]||(gs[e.g.id]={a:x,n:e.g.n,m:e.g.m});gg.b=x}
- if(e.r){pv=null;o+=restG(e,x,top);for(let k=0;k<e.dot;k++)o+='<circle cx="'+(x+9+4*k)+'" cy="'+(top+15)+'" r="1.5" fill="currentColor"/>';return}
- const d=e.step-c.b,y=bot-d*4,up=beamMap.has(i)?beamMap.get(i).find(v=>v.i===i).up:d<4,fl=FLG[e.cd]||0,fill=e.cd=='w'||e.cd=='h'?'none':'currentColor';
- for(let k=-2;k>=d;k-=2)o+=ln(x-8,bot-k*4,x+8,bot-k*4,1);
- for(let k=10;k<=d;k+=2)o+=ln(x-8,bot-k*4,x+8,bot-k*4,1);
- o+='<ellipse cx="'+x+'" cy="'+y+'" rx="5.2" ry="3.7" transform="rotate(-20 '+x+' '+y+')" fill="'+fill+'" stroke="currentColor" stroke-width="1.3"/>';
- if(e.cd!='w'){
-  const sx=up?x+4.8:x-4.8,L=26+(fl>2?(fl-2)*5:0),ey=up?y-L:y+L;
-  o+=ln(sx,y,sx,ey,1.2);
-  if(!beamMap.has(i))for(let f=0;f<fl;f++){const fy=ey+(up?5:-5)*f;o+='<path d="M'+sx+' '+fy+'q6 '+(up?6:-6)+' 4 '+(up?12:-12)+'" fill="none" stroke="currentColor" stroke-width="1.4"/>'}
- }
- for(let k=0;k<e.dot;k++)o+='<circle cx="'+(x+9+4*k)+'" cy="'+(y-(d%2==0?4:0))+'" r="1.5" fill="currentColor"/>';
- if(e.acc||e.nat){const t=e.nat?'\u266E':SYM[e.acc];o+='<text x="'+(x-8)+'" y="'+(y+4)+'" font-size="14" text-anchor="end" font-family="Noto Music,serif" fill="currentColor">'+(e.pre?'('+t+')':t)+'</text>'}
- if(pv&&pv.tie)o+='<path d="M'+(pv.x+3)+' '+(pv.y+6)+'Q'+((pv.x+x)/2)+' '+(pv.y+15)+' '+(x-3)+' '+(y+6)+'" fill="none" stroke="currentColor" stroke-width="1.3"/>';
- pv={x:x,y:y,tie:e.tie};
-});
-groups.forEach(g=>{
- const first=g[0],last=g[g.length-1],up=first.up,stemX=v=>v.x+(up?4.8:-4.8),stemY=v=>v.y+(up?-(26+(v.fl>2?(v.fl-2)*5:0)):(26+(v.fl>2?(v.fl-2)*5:0)));
- const x1=stemX(first),x2=stemX(last),y1=stemY(first),y2=stemY(last),dx=(x2-x1)||1,yAt=x=>y1+(y2-y1)*(x-x1)/dx;
- o+='<path d="M'+x1+' '+y1+'L'+x2+' '+y2+'" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square"/>';
+flush();groups.forEach(g=>{
+ const up=g[0].up,stemX=v=>v.x+(up?4.8:-4.8);
+ const headYs=g.map(v=>v.y),beamY=up?Math.min(...headYs)-26:Math.max(...headYs)+26;
+ const x1=stemX(g[0]),x2=stemX(g[g.length-1]);
+ g.forEach(v=>o+=ln(stemX(v),v.y,stemX(v),beamY,1.2));
+ o+='<path d="M'+x1+' '+beamY+'L'+x2+' '+beamY+'" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square"/>';
  for(let level=2;level<=4;level++){
   let j=0;
   while(j<g.length){
    if(g[j].fl<level){j++;continue}
    let k=j;while(k+1<g.length&&g[k+1].fl>=level)k++;
-   if(k>j){const xa=stemX(g[j]),xb=stemX(g[k]),off=(up?1:-1)*4.5*(level-1);o+='<path d="M'+xa+' '+(yAt(xa)+off)+'L'+xb+' '+(yAt(xb)+off)+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>'}
-   else{const v=g[j],sx=stemX(v),ex=sx+(j<g.length-1?5:-5),off=(up?1:-1)*4.5*(level-1);o+='<path d="M'+sx+' '+(yAt(sx)+off)+'l'+(ex-sx)+' 0" fill="none" stroke="currentColor" stroke-width="2.2"/>'}
+   const off=(up?1:-1)*4.5*(level-1);
+   if(k>j){const xa=stemX(g[j]),xb=stemX(g[k]);o+='<path d="M'+xa+' '+(beamY+off)+'L'+xb+' '+(beamY+off)+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>'}
+   else{const v=g[j],sx=stemX(v),toward=j<g.length-1?1:-1,ex=sx+toward*6;o+='<path d="M'+sx+' '+(beamY+off)+'l'+(ex-sx)+' 0" fill="none" stroke="currentColor" stroke-width="2.2"/>'}
    j=k+1;
   }
  }
