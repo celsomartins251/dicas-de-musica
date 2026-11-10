@@ -346,12 +346,12 @@ function ks(){const e=$('#ks');if(e)e.textContent=kb?'TECLADO ATIVO Â· PAUTA: Aâ
 function moveLastPitch(m,dir){const a=segs(m.nt,NB());let b=ab;while(b>0&&!a[b].trim())b--;const w=a[b].replace(/[{}]/g,' $& ').trim().split(/\s+/);for(let i=w.length-1;i>=0;i--){const z=/^(\()?([A-Ga-g])(##|bb|#|b|=)?(\d?)([whqesfu]?)(\.{0,3})(~?)$/.exec(w[i]);if(!z)continue;let step=(+z[4]||({treble:4,alto:3,bass:2}[m.clef]||4))*7+LI.indexOf(z[2].toUpperCase())+dir,oct=Math.floor(step/7),letter=LI[(step%7+7)%7];w[i]=(z[1]||'')+letter+z[3]+oct+z[5]+z[6]+z[7];a[b]=w.join(' ');m.nt=a.join(' | ');return true}return false}
 function appendRhythm(m,token){m.rhythm=((m.rhythm||'')+' '+token).trim();save();R();E()}
 function blip(n){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.type='triangle';o.frequency.value=hz(n);g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.0001,t+.4);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.45)}catch(e){}}
-document.addEventListener('keydown',e=>{if(!kb||e.ctrlKey||e.metaKey||e.altKey)return;const m=S.measures[sel];if(!m)return;const k=e.key,nb=NB(),typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'');if(typing&&!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))return;let handled=true;
-if(m.t!='s'&&/^[1-7]$/.test(k)){appendRhythm(m,(e.shiftKey?'r':'')+KD[+k-1]);e.preventDefault();return}
+document.addEventListener('keydown',e=>{if(!kb||e.ctrlKey||e.metaKey||e.altKey)return;const m=S.measures[sel];if(!m)return;const k=e.key,num=(e.code?.match(/^(?:Digit|Numpad)([1-7])$/)||[])[1]||(!e.shiftKey&&/^[1-7]$/.test(k)?k:null),nb=NB(),typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'');if(typing&&!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))return;let handled=true;
+if(m.t!='s'&&num){appendRhythm(m,(e.shiftKey?'r':'')+KD[+num-1]);e.preventDefault();return}
 if(m.t!='s'&&k.toLowerCase()=='t'){const a=(m.rhythm||'').trim().split(/\s+/);for(let i=a.length-1;i>=0;i--)if(/^r?[whqesfu]/.test(a[i])){a[i]=a[i].endsWith('~')?a[i].slice(0,-1):a[i]+'~';break}m.rhythm=a.join(' ')}
 else if(m.t!='s'&&k=='.'){const a=(m.rhythm||'').trim().split(/\s+/);for(let i=a.length-1;i>=0;i--)if(/^r?[whqesfu]/.test(a[i])){a[i]=a[i].replace(/\.{0,3}~?$/,'')+'.'+(a[i].endsWith('~')?'~':'');break}m.rhythm=a.join(' ')}
-else if(m.t=='s'&&e.shiftKey&&/^[1-7]$/.test(k)){const a=segs(m.nt,nb);a[ab]=(a[ab]+' r'+KD[+k-1]).trim();m.nt=a.join(' | ')}
-else if(m.t=='s'&&/^[1-7]$/.test(k))kd=KD[+k-1];
+else if(m.t=='s'&&e.shiftKey&&num){const a=segs(m.nt,nb);a[ab]=(a[ab]+' r'+KD[+num-1]).trim();m.nt=a.join(' | ')}
+else if(m.t=='s'&&num)kd=KD[+k-1];
 else if(m.t=='s'&&['a','c','d','e','f','g','A','B','C','D','E','F','G'].includes(k)){const letter=k.toUpperCase(),oct=({treble:4,alto:3,bass:2}[m.clef]||4),a=segs(m.nt,nb);a[ab]=(a[ab]+' '+letter+oct+kd).trim();m.nt=a.join(' | ');blip(NL[letter]+12*(oct+1));const used=pn(a[ab],m.clef,BL()).reduce((v,n)=>v+n.d,0);if(used>=BL()-.001&&ab<nb-1)ab++}
 else if(m.t=='s'&&k=='b')edLast(m,t=>t.replace(/^(\()?([A-Ga-g])(##|bb|#|b|=)?/,(x,p,l)=>(p||'')+l+'b'));
 else if(m.t=='s'&&k=='#')edLast(m,t=>t.replace(/^(\()?([A-Ga-g])(##|bb|#|b|=)?/,(x,p,l,c)=>(p||'')+l+(c=='#'?'##':'#')));
