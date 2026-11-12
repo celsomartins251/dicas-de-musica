@@ -1181,7 +1181,7 @@
             guitarra7: { label: "Guitarra", subtitle: "GUITARRA 7 CORDAS • B E A D G B E", strings: GUITAR_7_STRINGS, timbre: "guitarra" }
         };
 
-        Regiões completas dos cinco desenhos CAGED; os limites são relativos
+        // Regiões completas dos cinco desenhos CAGED; os limites são relativos
         // à fundamental do desenho. Os alcances ampliados nas formas C, E e D
         // incluem as notas de extensão nas cordas agudas e graves (ex.: Bb na
         // corda B, casa 11, dentro do desenho E em Dó).
@@ -1774,7 +1774,14 @@
             } catch (e) {}
             return "violao";
         }
-        function bootTimbre() { setTimbre(initialTimbre()); }
+        function bootTimbre() {
+            const initial = initialTimbre();
+            if (initial === "guitarra") {
+                currentInstrument = "guitarra6";
+                instrumentSelect.value = "guitarra6";
+            }
+            setTimbre(initial);
+        }
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", bootTimbre);
         } else {
