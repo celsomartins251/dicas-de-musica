@@ -278,7 +278,8 @@
         .string-bass-2 { height: 3.5px; } 
         .string-bass-3 { height: 4.5px; } 
         .string-bass-4 { height: 5.5px; } 
-        .string-bass-5 { height: 6.5px; } 
+        .string-bass-5 { height: 6.5px; }
+        .string-bass-6 { height: 7.5px; } 
 
         
         /* Container virtual de notas absoluto por corda alinhado às casas */
@@ -600,7 +601,7 @@
         </svg>
         <div class="brand-titles">
             <h1>Mapa do Contrabaixo</h1>
-            <span>CONTRABAIXO 4 E 5 CORDAS • POR CELSO MARTINS</span>
+            <span>CONTRABAIXO 4, 5 E 6 CORDAS • POR CELSO MARTINS</span>
         </div>
     </header>
 
@@ -709,6 +710,7 @@
             <select id="instrument-select">
                 <option value="bass5" selected>Contrabaixo 5 Cordas (B E A D G)</option>
                 <option value="bass4">Contrabaixo 4 Cordas (E A D G)</option>
+                <option value="bass6">Contrabaixo 6 Cordas (B E A D G C)</option>
             </select>
         </div>
 
@@ -1121,6 +1123,17 @@
             { name: "B", rootNoteIndex: 11, octave: 0 }
         ];
 
+        // Afinação padrão de 6 cordas, da mais aguda para a mais grave:
+        // C3 – G2 – D2 – A1 – E1 – B0 (B E A D G C, da grave para a aguda).
+        const BASS_6_STRINGS = [
+            { name: "C", rootNoteIndex: 0, octave: 3 },
+            { name: "G", rootNoteIndex: 7, octave: 2 },
+            { name: "D", rootNoteIndex: 2, octave: 2 },
+            { name: "A", rootNoteIndex: 9, octave: 1 },
+            { name: "E", rootNoteIndex: 4, octave: 1 },
+            { name: "B", rootNoteIndex: 11, octave: 0 }
+        ];
+
 
         // Regiões completas dos cinco desenhos CAGED; os limites são relativos
         // à fundamental do desenho. Os alcances ampliados nas formas C, E e D
@@ -1136,6 +1149,7 @@
 
         function getInstrumentStrings() {
             if (currentInstrument === "bass4") return BASS_4_STRINGS;
+            if (currentInstrument === "bass6") return BASS_6_STRINGS;
             return BASS_5_STRINGS;
         }
 
