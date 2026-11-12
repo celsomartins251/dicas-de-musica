@@ -1656,9 +1656,11 @@
         function fadeVoicesBefore(when) {
             const fadeAt = Math.max(audioCtx.currentTime, when - 0.035);
             for (const voice of Array.from(scheduledVoices)) {
+                if (voice.stopping) continue;
+                voice.stopping = true;
                 try {
                     voice.gain.gain.cancelScheduledValues(fadeAt);
-                    voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), fadeAt);
+                    voice.gain.gain.setValueAtTime(voice.level || 0.2, fadeAt);
                     voice.gain.gain.linearRampToValueAtTime(0.0001, fadeAt + 0.025);
                     voice.src.stop(when + 0.01);
                 } catch (e) {}
@@ -1675,7 +1677,7 @@
             src.connect(gain);
             gain.connect(audioCtx.destination);
             src.start(when, Math.max(0, loaded.onsets[noteIndex] - 0.003), t.noteLength);
-            const voice = { src, gain };
+            const voice = { src, gain, level: t.level, stopping: false };
             scheduledVoices.add(voice);
             activeVoice = voice;
             src.onended = () => {
@@ -1697,7 +1699,7 @@
             gain.connect(audioCtx.destination);
             osc.start(when);
             osc.stop(when + 0.82);
-            const voice = { src: osc, gain };
+            const voice = { src: osc, gain, level: 0.2, stopping: false };
             scheduledVoices.add(voice);
             activeVoice = voice;
             osc.onended = () => {
