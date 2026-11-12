@@ -1490,7 +1490,6 @@
             level: 1.0                 // volume geral do timbre
         };
         let bassBuffer = null;
-        let bassOnsets = null;
         let bassLoadPromise = null;
         let bassVoice = null;
 
@@ -1524,23 +1523,10 @@
                     buffer = await decodeWith(audioCtx, data.slice(0));
                 }
 
-                // Localiza o ataque real de cada nota dentro do slot, o que
-                // dispensa qualquer ajuste de atraso do decodificador de MP3.
-                const ch = buffer.getChannelData(0);
-                const sr = buffer.sampleRate;
-                const onsets = [];
-                for (let k = 0; k < BASS_SAMPLE.count; k++) {
-                    const slotStart = Math.floor(k * BASS_SAMPLE.slot * sr);
-                    const scanEnd = Math.min(ch.length, slotStart + Math.floor(0.7 * sr));
-                    let found = -1;
-                    for (let i = slotStart; i < scanEnd; i++) {
-                        if (Math.abs(ch[i]) > 0.01) { found = i; break; }
-                    }
-                    onsets.push(found >= 0 ? found / sr
-                                           : k * BASS_SAMPLE.slot + BASS_SAMPLE.lead);
-                }
+                // Cada nota ocupa um slot fixo no arquivo. Usamos o mesmo
+                // ponto de início relativo em todos os slots para não deixar
+                // ruídos/ataques diferentes deslocarem a pulsação entre notas.
                 bassBuffer = buffer;
-                bassOnsets = onsets;
                 return buffer;
             })().catch(err => {
                 console.warn("Timbre de contrabaixo indisponível, usando som sintetizado:", err);
@@ -1583,7 +1569,9 @@
             src.connect(gain);
             gain.connect(audioCtx.destination);
 
-            const offset = Math.max(0, bassOnsets[noteIndex] - 0.003);
+            // Início determinístico: slot da nota + lead fixo (150 ms).
+            // O ataque deixa de depender do primeiro pico de volume do MP3.
+            const offset = noteIndex * BASS_SAMPLE.slot + BASS_SAMPLE.lead;
             src.start(when, offset, BASS_SAMPLE.noteLength);
 
             const voice = { src, gain };
@@ -1684,10 +1672,13 @@
             const sequence = [...filteredNotes, ...[...filteredNotes].reverse().slice(1)];
             let step = 0;
             let nextNoteTime = 0;
-            const lookAheadSeconds = 0.12;
+            // Margem maior para navegadores móveis: o JavaScript agenda
+            // com antecedência e o relógio de áudio executa os ataques.
+            const lookAheadSeconds = 0.30;
             const schedulerIntervalMs = 25;
 
-            // Aguarda o contexto e as amostras antes de iniciar o relógio musical.
+            // Aguarda o contexto e a decodificação completa antes de iniciar
+            // o relógio musical; nenhuma amostra é carregada durante a execução.
             await initAudioContextWithSamples();
             if (!isPlaying) return;
             await loadBassSamples();
