@@ -1187,6 +1187,7 @@
         let isPlaying = false;
         let isLoop = false;
         let isMetronomeEnabled = false;
+        let metronomeNodes = [];
         let bpm = 120;
         let audioCtx = null;
         let playTimeout = null;
@@ -1630,8 +1631,8 @@
         }
 
         // Clique curto sincronizado ao mesmo relógio de áudio das notas da escala.
-        function scheduleMetronomeClick(when, accent = false) {
-            if (!isMetronomeEnabled || !audioCtx) return;
+        function scheduleMetronomeClick(when, accent = false, force = false) {
+            if ((!isMetronomeEnabled && !force) || !audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = "sine";
@@ -1643,7 +1644,11 @@
             gain.connect(audioCtx.destination);
             osc.start(when);
             osc.stop(when + 0.05);
-            osc.onended = () => { try { osc.disconnect(); gain.disconnect(); } catch (e) {} };
+            metronomeNodes.push(osc);
+            osc.onended = () => {
+                try { osc.disconnect(); gain.disconnect(); } catch (e) {}
+                metronomeNodes = metronomeNodes.filter(node => node !== osc);
+            };
         }
 
         async function playScaleSequence() {
@@ -1684,7 +1689,14 @@
             await loadBassSamples();
             if (!isPlaying) return;
 
-            nextNoteTime = audioCtx.currentTime + 0.05;
+            // Um compasso de contagem (4/4) dá tempo ao músico para se preparar.
+            // Os quatro cliques são agendados no relógio de áudio, antes da primeira nota.
+            const beatDuration = 60 / Number(bpm);
+            const countInStart = audioCtx.currentTime + 0.12;
+            for (let beat = 0; beat < 4; beat++) {
+                scheduleMetronomeClick(countInStart + beat * beatDuration, beat === 0, true);
+            }
+            nextNoteTime = countInStart + 4 * beatDuration;
 
             function scheduleAhead() {
                 if (!isPlaying) return;
@@ -1737,6 +1749,11 @@
 
         function stopScalePlayback() {
             releaseBassVoice();
+            if (audioCtx && metronomeNodes.length) {
+                const stopAt = audioCtx.currentTime;
+                metronomeNodes.forEach(node => { try { node.stop(stopAt); } catch (e) {} });
+                metronomeNodes = [];
+            }
             isPlaying = false;
             clearTimeout(playTimeout);
             playTimeout = null;
