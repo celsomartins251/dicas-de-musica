@@ -1597,13 +1597,13 @@
             loadBassSamples();
         }
 
-        // Corta a nota anterior com um release curto (baixo é monofônico).
-        function releaseBassVoice(release = 0.06) {
+        // Agenda o release no relógio de áudio, nunca no relógio impreciso do JS.
+        function releaseBassVoice(release = 0.06, atTime = null) {
             const v = bassVoice;
             bassVoice = null;
             if (!v || !audioCtx) return;
             try {
-                const t = audioCtx.currentTime;
+                const t = Math.max(audioCtx.currentTime, atTime == null ? audioCtx.currentTime : atTime);
                 v.gain.gain.cancelScheduledValues(t);
                 v.gain.gain.setValueAtTime(v.gain.gain.value, t);
                 v.gain.gain.linearRampToValueAtTime(0, t + release);
@@ -1611,19 +1611,19 @@
             } catch (e) { /* voz já encerrada */ }
         }
 
-        function playBassSample(noteIndex) {
-            releaseBassVoice();
+        // when permite disparar a amostra exatamente no instante agendado.
+        function playBassSample(noteIndex, when = audioCtx.currentTime) {
+            releaseBassVoice(0.035, when);
 
-            const now = audioCtx.currentTime;
             const src = audioCtx.createBufferSource();
             const gain = audioCtx.createGain();
             src.buffer = bassBuffer;
-            gain.gain.setValueAtTime(BASS_SAMPLE.level, now);
+            gain.gain.setValueAtTime(BASS_SAMPLE.level, when);
             src.connect(gain);
             gain.connect(audioCtx.destination);
 
             const offset = Math.max(0, bassOnsets[noteIndex] - 0.003);
-            src.start(now, offset, BASS_SAMPLE.noteLength);
+            src.start(when, offset, BASS_SAMPLE.noteLength);
 
             const voice = { src, gain };
             bassVoice = voice;
@@ -1636,19 +1636,23 @@
         // Som sintetizado antigo: só é usado se o MP3 não puder ser carregado
         // ou se a nota estiver fora da faixa gravada.
         function playSynthTone(freq) {
+            playSynthToneAt(freq, audioCtx.currentTime);
+        }
+
+        function playSynthToneAt(freq, when) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
+            const end = when + 0.7;
 
             osc.type = "sawtooth";
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
-
-            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, when);
+            gain.gain.linearRampToValueAtTime(0.4, when + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.001, end);
+            osc.frequency.setValueAtTime(freq, when);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.7);
+            osc.start(when);
+            osc.stop(end);
         }
 
         async function playSampleTone(freq) {
@@ -1676,7 +1680,7 @@
             return 440 * Math.pow(2, (totalSemitones - 57) / 12);
         }
 
-        function playScaleSequence() {
+        async function playScaleSequence() {
             if (!isPlaying) return;
 
             const visibleNotes = Array.from(document.querySelectorAll(".note.visible"));
@@ -1688,9 +1692,7 @@
             const uniqueMap = new Map();
             visibleNotes.forEach(n => {
                 const key = `${n.dataset.string}-${n.dataset.fret}`;
-                if (!uniqueMap.has(key)) {
-                    uniqueMap.set(key, n);
-                }
+                if (!uniqueMap.has(key)) uniqueMap.set(key, n);
             });
 
             const filteredNotes = Array.from(uniqueMap.values());
@@ -1703,35 +1705,64 @@
 
             const sequence = [...filteredNotes, ...[...filteredNotes].reverse().slice(1)];
             let step = 0;
-            const intervalTime = () => (60 / Number(bpm)) * 1000;
+            let nextNoteTime = 0;
+            const lookAheadSeconds = 0.12;
+            const schedulerIntervalMs = 25;
 
-            function nextStep() {
+            // Aguarda o contexto e as amostras antes de iniciar o relógio musical.
+            await initAudioContextWithSamples();
+            if (!isPlaying) return;
+            await loadBassSamples();
+            if (!isPlaying) return;
+
+            nextNoteTime = audioCtx.currentTime + 0.05;
+
+            function scheduleAhead() {
                 if (!isPlaying) return;
 
-                document.querySelectorAll(".note").forEach(n => n.classList.remove("playing"));
+                // O JS apenas alimenta a fila; os ataques são executados pelo relógio Web Audio.
+                while (isPlaying && nextNoteTime < audioCtx.currentTime + lookAheadSeconds) {
+                    if (step >= sequence.length) {
+                        if (isLoop) {
+                            step = 0;
+                        } else {
+                            isPlaying = false;
+                            playTimeout = null;
+                            return;
+                        }
+                    }
 
-                if (step < sequence.length) {
-                    const currentNoteEl = sequence[step];
-                    currentNoteEl.classList.add("playing");
-
-                    const stringIdx = parseInt(currentNoteEl.dataset.string);
-                    const fret = parseInt(currentNoteEl.dataset.fret);
+                    const noteEl = sequence[step];
+                    const stringIdx = Number(noteEl.dataset.string);
+                    const fret = Number(noteEl.dataset.fret);
                     const freq = getFrequency(stringIdx, fret);
-                    
-                    playSampleTone(freq);
+                    const semitone = Math.round(12 * Math.log2(freq / 440) + 57);
+                    const noteIndex = semitone - BASS_SAMPLE.firstSemitone;
+                    const when = nextNoteTime;
+
+                    if (bassBuffer && noteIndex >= 0 && noteIndex < BASS_SAMPLE.count) {
+                        playBassSample(noteIndex, when);
+                    } else {
+                        releaseBassVoice(0.035, when);
+                        playSynthToneAt(freq, when);
+                    }
+
+                    // A indicação visual acompanha o instante agendado; não controla o áudio.
+                    const visualDelay = Math.max(0, (when - audioCtx.currentTime) * 1000);
+                    setTimeout(() => {
+                        if (!isPlaying) return;
+                        document.querySelectorAll(".note.playing").forEach(n => n.classList.remove("playing"));
+                        noteEl.classList.add("playing");
+                    }, visualDelay);
 
                     step++;
-                    playTimeout = setTimeout(nextStep, intervalTime());
-                } else {
-                    if (isLoop) {
-                        step = 0;
-                        playTimeout = setTimeout(nextStep, intervalTime());
-                    } else {
-                        isPlaying = false;
-                    }
+                    nextNoteTime += 60 / Number(bpm);
                 }
+
+                if (isPlaying) playTimeout = setTimeout(scheduleAhead, schedulerIntervalMs);
             }
-            nextStep();
+
+            scheduleAhead();
         }
 
         function stopScalePlayback() {
