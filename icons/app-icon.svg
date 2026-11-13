@@ -1,6 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="112" fill="#10100e"/><rect x="18" y="18" width="476" height="476" rx="96" fill="none" stroke="#d5a928" stroke-width="12"/>
-<g fill="none" stroke="#d5a928" stroke-width="5" opacity=".9"><path d="M70 290 Q256 240 442 290"/><path d="M70 315 Q256 265 442 315"/><path d="M70 340 Q256 290 442 340"/></g>
-<text x="250" y="300" text-anchor="middle" fill="#f2d477" font-family="serif" font-size="250">𝄞</text>
-<circle cx="390" cy="230" r="16" fill="#d5a928"/><path d="M405 230v-105" stroke="#d5a928" stroke-width="10"/>
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0ad"/><stop offset=".38" stop-color="#d9ad42"/><stop offset=".72" stop-color="#a87519"/><stop offset="1" stop-color="#f5d878"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<rect width="512" height="512" rx="104" fill="#090909"/>
+<rect x="13" y="13" width="486" height="486" rx="91" fill="none" stroke="#6d501c" stroke-width="3"/>
+<rect x="22" y="22" width="468" height="468" rx="83" fill="none" stroke="url(#gold)" stroke-width="9"/>
+<rect x="34" y="34" width="444" height="444" rx="72" fill="none" stroke="#8d6a2a" stroke-width="1.5"/>
+<g fill="none" stroke="url(#gold)" stroke-width="3.2" opacity=".9">
+ <path d="M68 225 Q256 185 444 225"/><path d="M68 245 Q256 205 444 245"/>
+ <path d="M68 265 Q256 225 444 265"/><path d="M68 285 Q256 245 444 285"/>
+ <path d="M68 305 Q256 265 444 305"/>
+</g>
+<g fill="url(#gold)" stroke="#f6dc91" stroke-width="1">
+ <path d="M220 111 C187 126 173 163 180 206 C187 247 213 271 211 310 C209 338 188 352 166 340 C145 328 151 299 171 294 C183 291 195 298 198 308 C200 288 184 277 167 280 C136 285 123 325 145 349 C168 374 211 363 229 332 C254 289 215 240 210 201 C205 165 219 139 243 130 C260 124 271 138 265 153 C259 168 240 174 230 164 C234 184 257 189 273 175 C295 156 282 118 253 108 C242 104 230 106 220 111Z"/>
+ <path d="M257 112 C278 95 302 91 322 102 C337 110 341 127 332 139 C322 153 300 153 293 139 C288 129 296 119 306 119 C297 110 282 114 274 126 C264 142 276 163 295 168 C325 177 352 151 349 122 C346 91 316 74 286 82 C269 86 257 97 250 108Z"/>
+</g>
+<g fill="url(#gold)">
+ <ellipse cx="374" cy="207" rx="15" ry="10" transform="rotate(-25 374 207)"/>
+ <path d="M386 203V133Q414 126 424 143V214H416V151Q407 140 386 148Z"/>
+ <ellipse cx="128" cy="282" rx="13" ry="9" transform="rotate(-25 128 282)"/>
+ <path d="M139 278V225Q160 218 169 232V285H161V241Q152 233 139 239Z"/>
+</g>
+<text x="256" y="386" text-anchor="middle" fill="#f4d77e" font-family="Georgia,serif" font-size="25" font-weight="bold" letter-spacing="4">PLATAFORMA</text>
+<path d="M92 400H420" stroke="url(#gold)" stroke-width="2"/>
+<text x="256" y="430" text-anchor="middle" fill="#fff0b5" font-family="Georgia,serif" font-size="26" font-weight="bold" letter-spacing="2">DICAS DE MÚSICA</text>
+<text x="256" y="458" text-anchor="middle" fill="#d2aa51" font-family="Arial,sans-serif" font-size="15" letter-spacing="5">CELSO MARTINS</text>
 </svg>
