@@ -49,13 +49,13 @@ import {firebaseConfig} from './firebase-config.js';
 const V='10.12.2',G='https://www.gstatic.com/firebasejs/'+V+'/';
 const configured=!!firebaseConfig.apiKey;
 let A,F,auth,fs,sec=null;
-let db={students:[],apps:[],notes:[]},role=(new URLSearchParams(location.search).get('cmreturn')==='teacher'||location.hash==='#professor')?'teacher':(localStorage.getItem('cm_platform_role')==='teacher'?'teacher':'student'),managerStudentId=null,loginInProgress=false;
+let db={students:[],apps:[],notes:[]},role=(()=>{const a=new URLSearchParams(location.search).get('cmreturn');return a==='teacher'||location.hash==='#professor'?'teacher':a==='student'?'student':(localStorage.getItem('cm_platform_role')==='teacher'?'teacher':'student')})(),managerStudentId=null,loginInProgress=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function appHref(url,area){try{const u=new URL(url,location.href);u.searchParams.set('cmreturn',area);return u.href}catch(e){return url}}
 function showModal(id){$(id).classList.add('on');setTimeout(()=>$(id).querySelector('input')?.focus(),30)}
 function hideModal(id){$(id).classList.remove('on')}
-function updateEntryRoute(){const isTeacherRoute=new URLSearchParams(location.search).get('cmreturn')==='teacher'||location.hash==='#professor'||(!location.hash&&localStorage.getItem('cm_platform_role')==='teacher');if(!$('homeView').classList.contains('hidden'))role=isTeacherRoute?'teacher':'student';$('studentEntry').classList.toggle('hidden',isTeacherRoute);$('teacherEntry').classList.toggle('hidden',!isTeacherRoute)}
+function updateEntryRoute(){const a=new URLSearchParams(location.search).get('cmreturn');const isTeacherRoute=a==='teacher'||(!a&&location.hash==='#professor')||(!a&&!location.hash&&localStorage.getItem('cm_platform_role')==='teacher');if(!$('homeView').classList.contains('hidden'))role=isTeacherRoute?'teacher':'student';$('studentEntry').classList.toggle('hidden',isTeacherRoute);$('teacherEntry').classList.toggle('hidden',!isTeacherRoute)}
 window.addEventListener('hashchange',updateEntryRoute);
 updateEntryRoute();
 function showHome(){ $('homeView').classList.remove('hidden');$('teacherView').classList.remove('on');$('studentView').classList.remove('on');$('homeView').style.display='block';updateEntryRoute();window.scrollTo(0,0)}
