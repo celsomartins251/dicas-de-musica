@@ -1,10 +1,10 @@
 {
-  "id": "./index.html",
+  "id": "./app-acesso.html",
   "name": "Plataforma Dicas de Música — Celso Martins",
   "short_name": "Dicas de Música",
   "description": "Plataforma de estudos musicais de Celso Martins.",
   "lang": "pt-BR",
-  "start_url": "./index.html?v=20261113",
+  "start_url": "./app-acesso.html?v=20261113",
   "scope": "./",
   "display": "standalone",
   "display_override": [
@@ -16,9 +16,9 @@
   "theme_color": "#10100e",
   "icons": [
     {
-      "src": "./icons/file_0000000092c4820ea9366e452489b1ef.png?v=20261113",
-      "sizes": "any",
-      "type": "image/png",
+      "src": "./icons/app-icon.svg?v=20261113",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
