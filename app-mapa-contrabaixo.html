@@ -1708,7 +1708,7 @@
             const beatDuration = 60 / Number(bpm);
             const countInStart = audioCtx.currentTime + 0.12;
             for (let beat = 0; beat < 4; beat++) {
-                scheduleMetronomeClick(countInStart + beat * beatDuration, beat === 0, true);
+                scheduleMetronomeClick(countInStart + beat * beatDuration, beat === 0);
             }
             nextNoteTime = countInStart + 4 * beatDuration;
 
