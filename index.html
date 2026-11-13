@@ -49,12 +49,12 @@ import {firebaseConfig} from './firebase-config.js';
 const V='10.12.2',G='https://www.gstatic.com/firebasejs/'+V+'/';
 const configured=!!firebaseConfig.apiKey;
 let A,F,auth,fs,sec=null;
-let db={students:[],apps:[],notes:[]},role=location.hash==='#professor'?'teacher':'student',managerStudentId=null,loginInProgress=false;
+let db={students:[],apps:[],notes:[]},role=location.hash==='#professor'?'teacher':(localStorage.getItem('cm_platform_role')==='teacher'?'teacher':'student'),managerStudentId=null,loginInProgress=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function showModal(id){$(id).classList.add('on');setTimeout(()=>$(id).querySelector('input')?.focus(),30)}
 function hideModal(id){$(id).classList.remove('on')}
-function updateEntryRoute(){const isTeacherRoute=location.hash==='#professor';if(!$('homeView').classList.contains('hidden'))role=isTeacherRoute?'teacher':'student';$('studentEntry').classList.toggle('hidden',isTeacherRoute);$('teacherEntry').classList.toggle('hidden',!isTeacherRoute)}
+function updateEntryRoute(){const isTeacherRoute=location.hash==='#professor'||(!location.hash&&localStorage.getItem('cm_platform_role')==='teacher');if(!$('homeView').classList.contains('hidden'))role=isTeacherRoute?'teacher':'student';$('studentEntry').classList.toggle('hidden',isTeacherRoute);$('teacherEntry').classList.toggle('hidden',!isTeacherRoute)}
 window.addEventListener('hashchange',updateEntryRoute);
 updateEntryRoute();
 function showHome(){ $('homeView').classList.remove('hidden');$('teacherView').classList.remove('on');$('studentView').classList.remove('on');$('homeView').style.display='block';updateEntryRoute();window.scrollTo(0,0)}
@@ -101,7 +101,7 @@ async function enter(user){
   await loadApps();const m=await F.getDocs(F.collection(fs,'students',user.uid,'materials'));
   logAccess('login',s.data());showView('student');renderStudent({...s.data(),id:user.uid,materials:m.docs.map(x=>({id:x.id,...x.data()})).sort(byTime)});return true;
 }
-function showView(v){hideModal('loginModal');$('homeView').classList.add('hidden');$('homeView').style.display='none';$('teacherView').classList.toggle('on',v==='teacher');$('studentView').classList.toggle('on',v==='student');window.scrollTo(0,0)}
+function showView(v){role=v;try{localStorage.setItem('cm_platform_role',v)}catch(e){}hideModal('loginModal');$('homeView').classList.add('hidden');$('homeView').style.display='none';$('teacherView').classList.toggle('on',v==='teacher');$('studentView').classList.toggle('on',v==='student');window.scrollTo(0,0)}
 async function login(e){e.preventDefault();if(!configured){err('O Firebase ainda não foi configurado.');return}if(loginInProgress)return;loginInProgress=true;
   try{const c=await F.signInWithEmailAndPassword(auth,$('loginEmail').value.trim(),$('loginPassword').value);
     const r=await enter(c.user);if(r==='blocked')err('Seu acesso está bloqueado. Fale com o professor.');else if(!r)err('Este e-mail não tem acesso liberado. Fale com o professor.')}
@@ -123,7 +123,7 @@ $('studentForm').addEventListener('submit',e=>{e.preventDefault();const name=$('
     const uid=cred.user.uid;await F.signOut(sa);await F.setDoc(F.doc(fs,'students',uid),{name,email,createdAt:F.serverTimestamp()});$('studentForm').reset();await refresh();$('studentMsg').textContent='Acesso criado. Entregue o e-mail e a senha ao aluno.'},'studentMsg')});
 $('materialForm').addEventListener('submit',e=>{e.preventDefault();const s=db.students.find(x=>x.id===managerStudentId);if(!s)return;const url=$('materialUrl').value.trim(),content=$('materialBody').value.trim();if(url&&!/^https:\/\//i.test(url)){$('materialMsg').textContent='Use um link seguro que comece com https://';return}if(!url&&!content){$('materialMsg').textContent='Escreva o conteúdo ou adicione um link externo.';return}
   run(async()=>{await F.addDoc(F.collection(fs,'students',s.id,'materials'),{type:$('materialType').value,title:$('materialTitle').value.trim(),description:$('materialDescription').value.trim(),content,url,createdAt:F.serverTimestamp()});$('materialForm').reset();await refresh();$('materialMsg').textContent='Material adicionado ao espaço deste aluno.'},'materialMsg')});
-document.querySelectorAll('[data-logout]').forEach(b=>b.onclick=async()=>{try{if(auth)await F.signOut(auth)}catch(x){}role='';managerStudentId=null;db={students:[],apps:[],notes:[]};showHome()});
+document.querySelectorAll('[data-logout]').forEach(b=>b.onclick=async()=>{try{if(auth)await F.signOut(auth)}catch(x){}try{localStorage.removeItem('cm_platform_role')}catch(x){}role='';managerStudentId=null;db={students:[],apps:[],notes:[]};showHome()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')hideModal('loginModal')});
 $('year').textContent=new Date().getFullYear();updateEntryRoute();window.addEventListener('hashchange',updateEntryRoute);
 const CHUNK=700000;let lib=[],releaseNote='';const bookIdx={},bookDocs={};
