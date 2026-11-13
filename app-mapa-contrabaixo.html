@@ -1866,7 +1866,25 @@
 #cm-platform-return:hover,#cm-platform-return:focus-visible{background:#d5a928;color:#171713;outline:2px solid #f2d477;outline-offset:2px}
 @media(max-width:600px){#cm-platform-return{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));min-height:44px;padding:0 14px;font-size:12px}}
 </style>
-<a id="cm-platform-return" href="https://celsomartins251.github.io/dicas-de-musica/" aria-label="Voltar à plataforma Dicas de Música">← VOLTAR À PLATAFORMA</a>
+<a id="cm-platform-return" href="./" aria-label="Voltar à plataforma Dicas de Música">← VOLTAR À PLATAFORMA</a>
 
+<script>
+(function(){
+  const link=document.getElementById('cm-platform-return');
+  if(!link)return;
+  link.addEventListener('click',function(event){
+    event.preventDefault();
+    let area=new URLSearchParams(location.search).get('cmreturn');
+    if(area!=='teacher'&&area!=='student'){
+      try{area=localStorage.getItem('cm_platform_role')}catch(e){}
+    }
+    if(area!=='teacher'&&area!=='student')area='student';
+    const target=new URL('./',location.href);
+    target.searchParams.set('cmreturn',area);
+    if(area==='teacher')target.hash='professor';
+    location.href=target.href;
+  });
+})();
+</script>
 </body>
 </html>
