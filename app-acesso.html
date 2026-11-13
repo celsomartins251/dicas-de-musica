@@ -146,7 +146,9 @@
         showMessage('Acesso confirmado. Abrindo sua área...', true);
         // A plataforma existente valida a função e o cadastro do usuário no Firestore.
         // Não duplicamos regras de professor/aluno nesta tela.
-        const destination = new URL('./index.html', window.location.href);\n        if (window.location.hash === '#professor') destination.hash = 'professor';\n        window.location.replace(destination.href);
+        const destination = new URL('./index.html', window.location.href);
+        if (window.location.hash === '#professor') destination.hash = 'professor';
+        window.location.replace(destination.href);
       } catch (error) {
         console.error('Falha no login:', error);
         const code = error?.code || '';
