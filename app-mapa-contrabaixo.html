@@ -1580,12 +1580,20 @@
             const src = audioCtx.createBufferSource();
             const gain = audioCtx.createGain();
             src.buffer = bassBuffer;
-            gain.gain.setValueAtTime(BASS_SAMPLE.level, when);
+            // Envelope curto para evitar estalos causados por início/fim abruptos
+            // da amostra. O ataque de 8 ms preserva o timbre, sem clique digital.
+            const attack = 0.008;
+            const release = 0.012;
+            const endTime = when + BASS_SAMPLE.noteLength;
+            gain.gain.setValueAtTime(0.0001, when);
+            gain.gain.linearRampToValueAtTime(BASS_SAMPLE.level, when + attack);
+            gain.gain.setValueAtTime(BASS_SAMPLE.level, endTime - release);
+            gain.gain.linearRampToValueAtTime(0.0001, endTime);
             src.connect(gain);
             gain.connect(audioCtx.destination);
 
             // Início determinístico: slot da nota + lead fixo (150 ms).
-            // O ataque deixa de depender do primeiro pico de volume do MP3.
+            // O envelope suaviza as bordas sem alterar o ponto de ataque gravado.
             const offset = noteIndex * BASS_SAMPLE.slot + BASS_SAMPLE.lead;
             src.start(when, offset, BASS_SAMPLE.noteLength);
 
