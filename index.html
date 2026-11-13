@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#10100e">\n<link rel="manifest" href="./manifest.webmanifest?v=20261112">\n<link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg?v=20261112">\n<link rel="apple-touch-icon" href="./icons/app-icon.svg?v=20261112">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-title" content="Dicas de Música">
+<meta name="theme-color" content="#10100e">
+<link rel="manifest" href="./manifest.webmanifest?v=20261113">
+<link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg?v=20261113">
+<link rel="apple-touch-icon" href="./icons/app-icon.svg?v=20261113">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dicas de Música">
 <title>Área de Membros | Celso Martins</title>
 <style>
 :root{--bg:#11110f;--panel:#191916;--panel2:#20201b;--line:#343329;--text:#f4f0e6;--muted:#b4b0a3;--gold:#d5a928;--gold2:#f2d477;--red:#ffb2a8;--green:#9fe0b4;--max:1120px}
@@ -80,12 +86,19 @@ async function toggleBlock(id){const st=db.students.find(x=>x.id===id);if(!st)re
 async function setAllowed(id){const ids=[...document.querySelectorAll('[data-allow]:checked')].map(c=>c.dataset.allow);await run(async()=>{await F.updateDoc(F.doc(fs,'students',id),{apps:ids});const st=db.students.find(x=>x.id===id);if(st)st.apps=ids})}
 async function refresh(){await loadTeacher();renderTeacher()}
 async function enter(user){
-  const t=await F.getDoc(F.doc(fs,'teachers',user.uid));
-  if(t.exists()){await loadTeacher();showView('teacher');$('teacherGreeting').textContent='Olá, '+String(t.data().name||'professor').split(/\s+/)[0];managerStudentId=null;renderTeacher();return true}
+  // Respeita a opção escolhida na tela de entrada. Uma conta que possua
+  // registros nas duas coleções não deve ser enviada automaticamente ao professor.
+  if(role==='teacher'){
+    const t=await F.getDoc(F.doc(fs,'teachers',user.uid));
+    if(!t.exists()){await F.signOut(auth);return false}
+    await loadTeacher();showView('teacher');$('teacherGreeting').textContent='Olá, '+String(t.data().name||'professor').split(/\s+/)[0];managerStudentId=null;renderTeacher();return true;
+  }
   const s=await F.getDoc(F.doc(fs,'students',user.uid));
-  if(!s.exists()){await F.signOut(auth);return false}if(s.data().blocked){await F.signOut(auth);return 'blocked'}
+  if(!s.exists()){await F.signOut(auth);return false}
+  if(s.data().blocked){await F.signOut(auth);return 'blocked'}
   await loadApps();const m=await F.getDocs(F.collection(fs,'students',user.uid,'materials'));
-  logAccess('login',s.data());showView('student');renderStudent({...s.data(),id:user.uid,materials:m.docs.map(x=>({id:x.id,...x.data()})).sort(byTime)});return true}
+  logAccess('login',s.data());showView('student');renderStudent({...s.data(),id:user.uid,materials:m.docs.map(x=>({id:x.id,...x.data()})).sort(byTime)});return true;
+}
 function showView(v){hideModal('loginModal');$('homeView').classList.add('hidden');$('homeView').style.display='none';$('teacherView').classList.toggle('on',v==='teacher');$('studentView').classList.toggle('on',v==='student');window.scrollTo(0,0)}
 async function login(e){e.preventDefault();if(!configured){err('O Firebase ainda não foi configurado.');return}
   try{const c=await F.signInWithEmailAndPassword(auth,$('loginEmail').value.trim(),$('loginPassword').value);
