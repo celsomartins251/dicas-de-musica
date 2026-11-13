@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#10100e">\n<link rel="manifest" href="./manifest.webmanifest?v=20261112">\n<link rel="icon" type="image/svg+xml" href="./icons/file_0000000092c4820ea9366e452489b1ef.png?v=20261113">\n<link rel="apple-touch-icon" href="./icons/file_0000000092c4820ea9366e452489b1ef.png?v=20261113">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-title" content="Dicas de Música">
+<meta name="theme-color" content="#10100e">\n<link rel="manifest" href="./manifest.webmanifest?v=20261112">\n<link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg?v=20261112">\n<link rel="apple-touch-icon" href="./icons/app-icon.svg?v=20261112">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-title" content="Dicas de Música">
 <title>Área de Membros | Celso Martins</title>
 <style>
 :root{--bg:#11110f;--panel:#191916;--panel2:#20201b;--line:#343329;--text:#f4f0e6;--muted:#b4b0a3;--gold:#d5a928;--gold2:#f2d477;--red:#ffb2a8;--green:#9fe0b4;--max:1120px}
@@ -14,7 +14,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><img class="seal-img" src="./icons/file_0000000092c4820ea9366e452489b1ef.png?v=20261113" alt="Dicas de Música"><span><b>CELSO MARTINS</b><small>Escola de Música</small></span></div><span class="top-label">Área de membros</span></header>
+<header class="top"><div class="brand"><img class="seal-img" src="./icons/app-icon.svg?v=20261112" alt="Dicas de Música"><span><b>CELSO MARTINS</b><small>Escola de Música</small></span></div><span class="top-label">Área de membros</span></header>
 <div class="wrap">
 <div id="cfgWarn" class="warning" style="display:none"><strong>Firebase não configurado:</strong> preencha o arquivo firebase-config.js para ativar o login.</div>
 <main id="homeView">
@@ -36,25 +36,7 @@
 </div>
 <div id="loginModal" class="modal-back" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><form id="loginForm" class="modal"><h2 id="loginTitle">Entrar</h2><p id="loginSub">Acesse sua área de membros.</p><div class="field"><label for="loginEmail">E-mail</label><input id="loginEmail" type="email" required autocomplete="username"></div><div class="field"><label for="loginPassword">Senha</label><input id="loginPassword" type="password" required autocomplete="current-password"></div><div id="loginError" class="error" role="alert"></div><div class="modal-actions"><button class="btn" id="cancelLogin" type="button">Cancelar</button><button class="btn gold" type="submit">Entrar</button></div><button type="button" class="btn small" id="forgotBtn" style="margin-top:10px">Esqueci minha senha</button></form></div>
 
-<script>
-(function(){
- const $=id=>document.getElementById(id);
- function route(){const t=location.hash==="#professor";$("studentEntry")?.classList.toggle("hidden",t);$("teacherEntry")?.classList.toggle("hidden",!t)}
- function open(which){const m=$("loginModal");if(!m)return;m.classList.add("on");$("loginTitle").textContent=which==="teacher"?"Entrar como professor":"Entrar como aluno";$("loginSub").textContent="Use o e-mail e a senha cadastrados.";if($("loginError"))$("loginError").textContent="";$("loginForm")?.reset();$("loginEmail")?.focus()}
- document.addEventListener("click",e=>{const b=e.target.closest("[data-login]");if(b){e.preventDefault();open(b.dataset.login)}},true);
- $("cancelLogin")?.addEventListener("click",()=> $("loginModal")?.classList.remove("on"));
- $("loginModal")?.addEventListener("click",e=>{if(e.target===$("loginModal"))$("loginModal").classList.remove("on")});
- window.addEventListener("hashchange",route);route();
- $("loginForm")?.addEventListener("submit",async e=>{
-  e.preventDefault();e.stopImmediatePropagation();const err=$("loginError"),btn=$("loginForm").querySelector('[type="submit"]');const say=m=>{if(err)err.textContent=m};btn.disabled=true;btn.textContent="Verificando acesso...";
-  try{
-   const [{firebaseConfig},{initializeApp,getApps,getApp},{getAuth,signInWithEmailAndPassword}]=await Promise.all([import("./firebase-config.js"),import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js")]);
-   const app=getApps().length?getApp():initializeApp(firebaseConfig);await signInWithEmailAndPassword(getAuth(app),$("loginEmail").value.trim(),$("loginPassword").value);location.reload();
-  }catch(x){console.error("Falha no acesso:",x);const c=x?.code||"";say(c==="auth/network-request-failed"?"Sem conexão. Confira a internet e tente novamente.":c==="auth/too-many-requests"?"Muitas tentativas. Aguarde um pouco.":c==="auth/invalid-email"?"O formato do e-mail não é válido.":"Não foi possível entrar. Confira e-mail e senha e tente novamente.");btn.disabled=false;btn.textContent="Entrar"}
- },true);
-})();
-</script>
-\n<script type="module">
+<script type="module">
 import {firebaseConfig} from './firebase-config.js';
 (async()=>{
 'use strict';
@@ -190,21 +172,7 @@ $('libForm').addEventListener('submit',e=>{e.preventDefault();const file=$('libF
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{const l=b.dataset.tab==='biblioteca';$('paneAlunos').classList.toggle('hidden',l);$('paneBiblioteca').classList.toggle('hidden',!l);document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('gold',x===b));if(l)refreshLib()});
 if(!configured){$('cfgWarn').style.display='block'}
 else{try{A=await import(G+'firebase-app.js');const Au=await import(G+'firebase-auth.js'),Fs=await import(G+'firebase-firestore.js');F={...Au,...Fs,getAuth:Au.getAuth};const app=A.initializeApp(firebaseConfig);auth=F.getAuth(app);fs=F.getFirestore(app);
-  F.onAuthStateChanged(auth,async u=>{
-    if(!u||$('teacherView').classList.contains('on')||$('studentView').classList.contains('on'))return;
-    try{
-      const result=await enter(u);
-      if(result===false){
-        $('loginModal').classList.add('on');
-        $('loginError').textContent='O e-mail foi autenticado, mas não encontramos um perfil de professor ou aluno vinculado a esta conta. Nenhum cadastro foi alterado.';
-      }
-    }catch(x){
-      console.error('Falha ao carregar o perfil após autenticação:',x);
-      $('loginModal').classList.add('on');
-      const code=x&&x.code||'';
-      $('loginError').textContent=(code==='permission-denied'||/permission/i.test(x&&x.message||''))?'O login foi reconhecido, mas o Firestore bloqueou a leitura do perfil. É necessário conferir as regras de acesso.':'O login foi reconhecido, mas houve uma falha ao carregar os dados do perfil. Tente novamente e, se persistir, informe este erro ao suporte.';
-    }
-  })}
+  F.onAuthStateChanged(auth,u=>{if(u&&!$('teacherView').classList.contains('on')&&!$('studentView').classList.contains('on'))enter(u).catch(console.error)})}
   catch(x){console.error(x);$('cfgWarn').style.display='block';$('cfgWarn').textContent='Não foi possível carregar o Firebase. Verifique a conexão.'}}
 })();
 </script>
