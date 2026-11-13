@@ -190,7 +190,21 @@ $('libForm').addEventListener('submit',e=>{e.preventDefault();const file=$('libF
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{const l=b.dataset.tab==='biblioteca';$('paneAlunos').classList.toggle('hidden',l);$('paneBiblioteca').classList.toggle('hidden',!l);document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('gold',x===b));if(l)refreshLib()});
 if(!configured){$('cfgWarn').style.display='block'}
 else{try{A=await import(G+'firebase-app.js');const Au=await import(G+'firebase-auth.js'),Fs=await import(G+'firebase-firestore.js');F={...Au,...Fs,getAuth:Au.getAuth};const app=A.initializeApp(firebaseConfig);auth=F.getAuth(app);fs=F.getFirestore(app);
-  F.onAuthStateChanged(auth,u=>{if(u&&!$('teacherView').classList.contains('on')&&!$('studentView').classList.contains('on'))enter(u).catch(console.error)})}
+  F.onAuthStateChanged(auth,async u=>{
+    if(!u||$('teacherView').classList.contains('on')||$('studentView').classList.contains('on'))return;
+    try{
+      const result=await enter(u);
+      if(result===false){
+        $('loginModal').classList.add('on');
+        $('loginError').textContent='O e-mail foi autenticado, mas não encontramos um perfil de professor ou aluno vinculado a esta conta. Nenhum cadastro foi alterado.';
+      }
+    }catch(x){
+      console.error('Falha ao carregar o perfil após autenticação:',x);
+      $('loginModal').classList.add('on');
+      const code=x&&x.code||'';
+      $('loginError').textContent=(code==='permission-denied'||/permission/i.test(x&&x.message||''))?'O login foi reconhecido, mas o Firestore bloqueou a leitura do perfil. É necessário conferir as regras de acesso.':'O login foi reconhecido, mas houve uma falha ao carregar os dados do perfil. Tente novamente e, se persistir, informe este erro ao suporte.';
+    }
+  })}
   catch(x){console.error(x);$('cfgWarn').style.display='block';$('cfgWarn').textContent='Não foi possível carregar o Firebase. Verifique a conexão.'}}
 })();
 </script>
