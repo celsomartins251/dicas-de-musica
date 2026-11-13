@@ -1,5 +1,5 @@
 // Service worker mínimo: não armazena páginas autenticadas, credenciais ou dados do Firestore.
-const VERSION = "celso-martins-pwa-v2-20261112";
+const VERSION = "celso-martins-pwa-v1";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
