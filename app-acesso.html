@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10100e">
   <meta name="description" content="Acesso à plataforma de estudos musicais Celso Martins – Dicas de Música.">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg">
+  <link rel="manifest" href="./manifest.webmanifest?v=20261112">\n  <link rel="apple-touch-icon" href="./icons/app-icon.svg?v=20261112">
+  <link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg?v=20261112">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Celso Martins">
@@ -19,7 +19,7 @@
     button,input{font:inherit}
     .shell{width:min(100%,440px)}
     .brand{text-align:center;margin-bottom:25px}
-    .mark{width:66px;height:66px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;color:var(--gold2);font:700 26px Georgia,serif;box-shadow:0 0 30px #d5a92818}
+    .mark{width:170px;max-width:62vw;height:auto;display:block;margin:0 auto 14px;filter:drop-shadow(0 8px 18px #0008)}
     .brand strong{display:block;font-size:13px;letter-spacing:.16em}
     .brand span{display:block;color:var(--muted);font-size:12px;letter-spacing:.08em;margin-top:4px}
     .card{background:linear-gradient(150deg,#1d1c17,#171714);border:1px solid var(--line);border-radius:18px;padding:clamp(22px,6vw,34px);box-shadow:0 22px 70px #0006}
@@ -45,14 +45,14 @@
     .foot a:hover{text-decoration:underline}
     .secure{display:flex;align-items:center;justify-content:center;gap:7px;color:#999485;font-size:11px;margin-top:17px}
     .secure svg{width:14px;height:14px;color:var(--gold2)}
-    @media(max-width:420px){body{padding:18px}.brand{margin-bottom:19px}.mark{width:58px;height:58px}}
+    @media(max-width:420px){body{padding:18px}.brand{margin-bottom:19px}.mark{width:150px}}
     @media(prefers-reduced-motion:reduce){*{transition:none!important}}
   </style>
 </head>
 <body>
   <main class="shell">
     <header class="brand">
-      <div class="mark" aria-hidden="true">CM</div>
+      <img class="mark" src="./icons/plataforma-logo.svg?v=20261112" alt="Plataforma Dicas de Música — Celso Martins">
       <strong>CELSO MARTINS</strong>
       <span>DICAS DE MÚSICA · PLATAFORMA DE ESTUDOS</span>
     </header>
@@ -104,7 +104,7 @@
 
     // Mantém a interface instalável sem armazenar páginas autenticadas ou dados de alunos.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Não foi possível registrar o modo instalável:', error)));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=20261112').catch(error => console.warn('Não foi possível registrar o modo instalável:', error)));
     }
 
     function showMessage(text, success = false) {
