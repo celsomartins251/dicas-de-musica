@@ -83,7 +83,7 @@
         Acesso protegido pela autenticação da plataforma
       </div>
     </section>
-    <footer class="foot">© <span id="year"></span> Celso Martins · <a href="./index.html">Abrir plataforma pelo navegador</a></footer>
+    <footer class="foot">© <span id="year"></span> Celso Martins · <a href="./index.html">Abrir plataforma pelo navegador</a><br><a href="./index.html#professor">Acesso do professor</a></footer>
   </main>
 
   <script type="module">
@@ -146,7 +146,7 @@
         showMessage('Acesso confirmado. Abrindo sua área...', true);
         // A plataforma existente valida a função e o cadastro do usuário no Firestore.
         // Não duplicamos regras de professor/aluno nesta tela.
-        window.location.replace('./index.html');
+        const destination = new URL('./index.html', window.location.href);\n        if (window.location.hash === '#professor') destination.hash = 'professor';\n        window.location.replace(destination.href);
       } catch (error) {
         console.error('Falha no login:', error);
         const code = error?.code || '';
