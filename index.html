@@ -160,7 +160,7 @@ async function releaseLibPage(sid,nid){const n=lib.find(x=>x.id===nid),s=db.stud
     page.querySelectorAll('a[href^="#"]').forEach(a=>a.replaceWith(...a.childNodes));
     if(/gabarito/i.test(page.textContent)){alert('Esta página ainda contém gabarito e não foi liberada, por segurança.');return}
     const styles=[...doc.querySelectorAll('style')].map(x=>x.outerHTML).join('');
-    const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+esc(title)+'</title>'+styles+'</head><body>'+page.outerHTML+'<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=20261112").catch(e=>console.warn("PWA:",e)));}</script>\n</body></html>';
+    const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+esc(title)+'</title>'+styles+'</head><body>'+page.outerHTML+'<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=20261112").catch(e=>console.warn("PWA:",e)));}<\/script>\n</body></html>';
     const HC=300000,parts=Math.ceil(html.length/HC);
     const ref=await F.addDoc(F.collection(fs,'students',sid,'materials'),{type:'Página de livro',title,description:'',content:'',url:'',anchor:'',parts,createdAt:F.serverTimestamp()});
     for(let i=0;i<parts;i++)await F.setDoc(F.doc(fs,'students',sid,'materials',ref.id,'htmlparts',String(i).padStart(4,'0')),{i,data:html.slice(i*HC,(i+1)*HC)});
