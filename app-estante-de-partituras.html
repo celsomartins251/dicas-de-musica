@@ -118,6 +118,18 @@
       safeReplaceOnce("annotationDpr=anno.width/Math.max(1,baseW*fitScale);","annotationDpr=anno.width/Math.max(1,baseW*fitScale*scale);","espessura da caneta com zoom");
       safeReplaceOnce("function changePage(n){if(!pdfDoc||!current)return;let max=current.pagesOrder?.length||pdfDoc.numPages;let next=page+n;if(next<1||next>max){let q=JSON.parse(sessionStorage.playOrder||'[]');let ix=q.indexOf(current.id);if(n>0&&q[ix+1])openReader(q[ix+1]);return}page=next;","function changePage(n){if(!pdfDoc||!current)return;let max=current.pagesOrder?.length||pdfDoc.numPages;let next=page+n;if(next<1||next>max){let q=JSON.parse(sessionStorage.playOrder||'[]');let ix=q.indexOf(current.id);if(n>0&&q[ix+1])openReader(q[ix+1]);return}saveCurrentAnnotations();drawing=false;activeStroke=null;selectedImage=null;strokes=[];if($('#annocanvas'))drawStrokes();if(currentRenderTask){try{currentRenderTask.cancel()}catch(e){}currentRenderTask=null}page=next;","salvar anotações ao trocar página");
       safeReplaceOnce("if(e.target.closest('button'))return;page=Number(el.dataset.p);scale=current.pageZoom?.[page]||1;renderPage();","if(e.target.closest('button'))return;saveCurrentAnnotations();drawing=false;activeStroke=null;selectedImage=null;strokes=[];drawStrokes();page=Number(el.dataset.p);scale=getPageZoom(page);renderPage();","salvar anotações ao abrir marcador");
+
+      var pmStart=source.indexOf("function pointerMove(e){");
+      if(pmStart>=0&&source.indexOf("scheduleStrokeDraw",pmStart)<0){
+        var pmTail=source.slice(pmStart),pmEndRel=pmTail.search(/function pointerUp\\s*\\(/);
+        if(pmEndRel>0){
+          var pmChunk=pmTail.slice(0,pmEndRel),pmDraw=pmChunk.lastIndexOf("drawStrokes()}");
+          if(pmDraw>=0){
+            var scheduler="let strokeDrawFrame=0;function scheduleStrokeDraw(){if(strokeDrawFrame)return;strokeDrawFrame=requestAnimationFrame(()=>{strokeDrawFrame=0;drawStrokes()})}";
+            source=source.slice(0,pmStart)+scheduler+pmChunk.slice(0,pmDraw)+"scheduleStrokeDraw()}"+pmTail.slice(pmEndRel);changes++;
+          }
+        }
+      }
     return originalEval.call(this,source);
   };
 })();
