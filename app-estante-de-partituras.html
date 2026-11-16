@@ -186,9 +186,9 @@ const endPointer=e=>{if(e.pointerType!=='mouse'||mousePointer!==e.pointerId)retu
    const r=bar.getBoundingClientRect(),host=reader.getBoundingClientRect();
    pointer=e.pointerId; moved=false;startX=e.clientX;startY=e.clientY;
    offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
-   try{bar.setPointerCapture(pointer)}catch(_){}
+
  },{passive:true});
- bar.addEventListener('pointermove',e=>{
+ document.addEventListener('pointermove',e=>{
    if(pointer!==e.pointerId)return;
    if(!moved&&Math.hypot(e.clientX-startX,e.clientY-startY)<6)return;
    moved=true;bar.classList.add('dragging');
@@ -203,8 +203,8 @@ const endPointer=e=>{if(e.pointerType!=='mouse'||mousePointer!==e.pointerId)retu
    if(moved){bar.dataset.draggedAt=String(Date.now());}
    pointer=null;bar.classList.remove('dragging');
  };
- bar.addEventListener('pointerup',finish);
- bar.addEventListener('pointercancel',finish);
+ document.addEventListener('pointerup',finish);
+ document.addEventListener('pointercancel',finish);
  bar.addEventListener('click',e=>{
    if(bar.dataset.draggedAt&&Date.now()-Number(bar.dataset.draggedAt)<450){
      e.preventDefault();e.stopImmediatePropagation();delete bar.dataset.draggedAt;
