@@ -245,7 +245,13 @@ function notationForDuration(beats) {
 }
 function setChildText(parent, name, text) {
   let el = child(parent, name);
-  if (!el) { el = parent.ownerDocument.createElement(name); parent.appendChild(el); }
+  if (!el) {
+    el = parent.ownerDocument.createElement(name);
+    const order = parent.localName === 'pitch' ? ['step','alter','octave'] : parent.localName === 'root' ? ['root-step','root-alter','root-degree'] : [];
+    const target = order.indexOf(name);
+    const next = target < 0 ? null : Array.from(parent.children).find(x => order.indexOf(x.localName) > target);
+    if (next) parent.insertBefore(el, next); else parent.appendChild(el);
+  }
   el.textContent = String(text);
   return el;
 }
@@ -271,10 +277,10 @@ export function applyMusicXmlEdits(xmlText, edits = {}) {
                 const midi = Math.round(edit.midi), pc = midi % 12;
                 setChildText(pitch, 'step', names[pc]);
                 const alter = alters[pc];
-                const oldAlter = child(pitch, 'alter');
-                if (alter) setChildText(pitch, 'alter', alter);
-                else if (oldAlter) oldAlter.remove();
+                setChildText(pitch, 'alter', alter);
                 setChildText(pitch, 'octave', Math.floor(midi / 12) - 1);
+                const accidental = child(node, 'accidental');
+                if (accidental) accidental.textContent = ({0:'natural',1:'sharp',2:'double-sharp',11:'flat',10:'flat',9:'flat'}[pc] || accidental.textContent);
               }
             }
             if (Number.isFinite(edit.durationBeats) && edit.durationBeats > 0) {
@@ -284,7 +290,11 @@ export function applyMusicXmlEdits(xmlText, edits = {}) {
               if (notation) {
                 setChildText(node, 'type', notation.type);
                 for (const dot of children(node, 'dot')) dot.remove();
-                for (let d = 0; d < notation.dots; d++) node.appendChild(doc.createElement('dot'));
+                const typeNode = child(node, 'type');
+                for (let d = 0; d < notation.dots; d++) {
+                  const dot = doc.createElement('dot');
+                  if (typeNode) node.insertBefore(dot, typeNode.nextSibling); else node.appendChild(dot);
+                }
               }
             }
           }
