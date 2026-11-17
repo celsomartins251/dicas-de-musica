@@ -247,7 +247,7 @@ function setChildText(parent, name, text) {
   let el = child(parent, name);
   if (!el) {
     el = parent.ownerDocument.createElement(name);
-    const order = parent.localName === 'pitch' ? ['step','alter','octave'] : parent.localName === 'root' ? ['root-step','root-alter','root-degree'] : parent.localName === 'attributes' ? ['divisions','key','time','staves','part-symbol','instruments','clef','staff-details','transpose'] : [];
+    const order = parent.localName === 'pitch' ? ['step','alter','octave'] : parent.localName === 'root' ? ['root-step','root-alter','root-degree'] : parent.localName === 'attributes' ? ['divisions','key','time','staves','part-symbol','instruments','clef','staff-details','transpose'] : parent.localName === 'note' ? ['grace','cue','chord','pitch','rest','unpitched','duration','tie','instrument','footnote','level','voice','type','dot','accidental','time-modification','stem','notehead','staff','beam','notations','lyric','play','listen'] : [];
     const target = order.indexOf(name);
     const next = target < 0 ? null : Array.from(parent.children).find(x => order.indexOf(x.localName) > target);
     if (next) parent.insertBefore(el, next); else parent.appendChild(el);
