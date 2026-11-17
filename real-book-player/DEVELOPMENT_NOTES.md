@@ -55,7 +55,7 @@ A alternativa Sheetscan executa HOMR no navegador via Pyodide, mas o projeto dec
 - Referências de elementos HTML usadas pelo JavaScript: todos os IDs encontrados.
 - Estrutura de tags HTML: sem tags abertas ou fechamentos incompatíveis na verificação estática.
 - Partitura sintética: 4 compassos, 13 notas, 4 cifras, 4/4 e 100 BPM; parser produziu 26 eventos note-on/note-off.
-- Teste de edição: altura C4 alterada para C#4, duração alterada para 1,5 tempo e cifra Cmaj7 alterada para Dm7; o MusicXML resultante foi reprocessado e preservou as alterações.
+- Teste de edição: altura C4 alterada para C#4, duração alterada para 1,5 tempo e cifra Cmaj7 alterada para Dm7; o MusicXML resultante foi reprocessado e preservou as alterações. O parser também sinaliza quando a duração editada faz o compasso ultrapassar a fórmula de compasso.
 - Teste de redivisão: o arquivo de teste passou de 1 para 16 divisões por semínima para representar a duração pontuada sem arredondamento.
 
 **Não testado em dispositivo real:** abertura do site no Chrome do Galaxy Tab S10 Lite, reprodução audível no WebView/Kodular, renderização OSMD carregada do CDN, cache offline após primeiro acesso e precisão de um resultado OMR real. Os testes desta etapa são estáticos e de parser com uma partitura sintética, não uma validação de reconhecimento de PDF.
