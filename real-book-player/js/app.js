@@ -1,5 +1,7 @@
+import { parseMusicXML, musicXmlPlaybackEvents, applyMusicXmlEdits, formatPitch, parsePitchText, isValidChordText } from './musicxml-engine.js';
 const DB_NAME='cm-real-book-player',DB_VERSION=1,STORE='files';
 let db,activeUrl=null,pdfDocument=null,pdfPageNumber=1,pdfjs=null,zoom=100,audioCtx=null,scheduleTimer=null,clockTimer=null,playEvents=[],playIndex=0,startedAt=0,pausedAt=0,tempoScale=1,currentMidi=null,activeVoices=new Set();
+let currentScoreXml='',currentScoreModel=null,currentScoreItem=null,scoreEdits={notes:{},chords:{}},osmdScriptPromise=null,osmdInstance=null;
 const $=id=>document.getElementById(id);
 const state={items:[],filter:'all'};
 const fmtSize=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB';
@@ -14,10 +16,133 @@ function fileType(name){const x=name.toLowerCase().split('.').pop();return x==='
 function typeLabel(t){return t==='pdf'?'PDF':t==='midi'?'MIDI':'XML'}
 async function importFiles(list){const files=[...list];if(!files.length)return;for(const f of files){const type=fileType(f.name);if(!['pdf','midi','musicxml'].includes(type)){toast('Formato não reconhecido: '+f.name);continue}if(f.size>50*1024*1024){toast('Arquivo acima de 50 MB: '+f.name);continue}const item={id:crypto.randomUUID(),name:f.name,type,size:f.size,addedAt:Date.now(),blob:f};await saveFile(item)}await refresh();toast(files.length+' arquivo(s) processado(s).')}
 async function refresh(){state.items=await allFiles();render()}
-function render(){const q=$('searchInput').value.trim().toLocaleLowerCase('pt-BR');let list=state.items.filter(x=>(state.filter==='all'||x.type===state.filter)&&x.name.toLocaleLowerCase('pt-BR').includes(q));const sort=$('sortSelect').value;list.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'pt-BR'):sort==='type'?a.type.localeCompare(b.type):b.addedAt-a.addedAt);$('libraryGrid').innerHTML=list.map(x=>`<article class="file-card"><div class="file-type">${typeLabel(x.type)}</div><h3 title="${esc(x.name)}">${esc(x.name)}</h3><small>${fmtSize(x.size)} · ${new Date(x.addedAt).toLocaleDateString('pt-BR')}</small><div class="file-actions"><button class="secondary-btn" data-open="${x.id}">${x.type==='pdf'?'Abrir PDF':x.type==='midi'?'Tocar MIDI':'Detalhes'}</button><button class="danger-btn" data-delete="${x.id}" aria-label="Excluir ${esc(x.name)}">Excluir</button></div></article>`).join('');$('emptyState').classList.toggle('show',state.items.length===0);$('libraryGrid').style.display=state.items.length?'grid':'none';document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeItem(b.dataset.delete));document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter))}
-async function openItem(id){const item=state.items.find(x=>x.id===id);if(!item)return;if(item.type==='midi'){showView('practice');await loadMidi(item);return}if(item.type!=='pdf'){toast('A visualização MusicXML será integrada em uma próxima etapa.');return}if(activeUrl)URL.revokeObjectURL(activeUrl);activeUrl=URL.createObjectURL(item.blob);pdfDocument=null;pdfPageNumber=1;$('viewerName').textContent=item.name;$('viewerMeta').textContent='PDF · '+fmtSize(item.size);$('downloadFile').href=activeUrl;$('downloadFile').download=item.name;$('viewer').classList.add('open');$('viewer').setAttribute('aria-hidden','false');document.body.style.overflow='hidden';zoom=100;applyZoom();$('pdfMessage').textContent='Carregando PDF…';$('pdfMessage').hidden=false;$('pdfCanvas').hidden=true;try{if(!pdfjs){pdfjs=await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs'}pdfDocument=await pdfjs.getDocument({data:await item.blob.arrayBuffer()}).promise;await renderPdfPage()}catch(e){console.error('PDF:',e);$('pdfMessage').textContent='Não foi possível abrir este PDF. Verifique a conexão e tente novamente, ou use Baixar para abrir em outro leitor.';$('pageCounter').textContent='—';toast('Falha ao abrir PDF: '+(e.message||'erro de leitura'))}}
+function render(){const q=$('searchInput').value.trim().toLocaleLowerCase('pt-BR');let list=state.items.filter(x=>(state.filter==='all'||x.type===state.filter)&&x.name.toLocaleLowerCase('pt-BR').includes(q));const sort=$('sortSelect').value;list.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'pt-BR'):sort==='type'?a.type.localeCompare(b.type):b.addedAt-a.addedAt);$('libraryGrid').innerHTML=list.map(x=>`<article class="file-card"><div class="file-type">${typeLabel(x.type)}</div><h3 title="${esc(x.name)}">${esc(x.name)}</h3><small>${fmtSize(x.size)} · ${new Date(x.addedAt).toLocaleDateString('pt-BR')}</small><div class="file-actions"><button class="secondary-btn" data-open="${x.id}">${x.type==='pdf'?'Abrir PDF':x.type==='midi'?'Tocar MIDI':'Revisar MusicXML'}</button><button class="danger-btn" data-delete="${x.id}" aria-label="Excluir ${esc(x.name)}">Excluir</button></div></article>`).join('');$('emptyState').classList.toggle('show',state.items.length===0);$('libraryGrid').style.display=state.items.length?'grid':'none';document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeItem(b.dataset.delete));document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter))}
+async function openItem(id){const item=state.items.find(x=>x.id===id);if(!item)return;if(item.type==='midi'){showView('practice');await loadMidi(item);return}if(item.type==='musicxml'){showView('practice');await loadMusicXML(item);return}if(item.type!=='pdf'){return}if(activeUrl)URL.revokeObjectURL(activeUrl);activeUrl=URL.createObjectURL(item.blob);pdfDocument=null;pdfPageNumber=1;$('viewerName').textContent=item.name;$('viewerMeta').textContent='PDF · '+fmtSize(item.size);$('downloadFile').href=activeUrl;$('downloadFile').download=item.name;$('viewer').classList.add('open');$('viewer').setAttribute('aria-hidden','false');document.body.style.overflow='hidden';zoom=100;applyZoom();$('pdfMessage').textContent='Carregando PDF…';$('pdfMessage').hidden=false;$('pdfCanvas').hidden=true;try{if(!pdfjs){pdfjs=await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs'}pdfDocument=await pdfjs.getDocument({data:await item.blob.arrayBuffer()}).promise;await renderPdfPage()}catch(e){console.error('PDF:',e);$('pdfMessage').textContent='Não foi possível abrir este PDF. Verifique a conexão e tente novamente, ou use Baixar para abrir em outro leitor.';$('pageCounter').textContent='—';toast('Falha ao abrir PDF: '+(e.message||'erro de leitura'))}}
 function closeViewer(){$('viewer').classList.remove('open');$('viewer').setAttribute('aria-hidden','true');if(pdfDocument){pdfDocument.destroy();pdfDocument=null}document.body.style.overflow='';if(activeUrl){URL.revokeObjectURL(activeUrl);activeUrl=null}}
 function applyZoom(){$('zoomReset').textContent=zoom+'%';if(pdfDocument)renderPdfPage()}async function renderPdfPage(){if(!pdfDocument)return;const page=await pdfDocument.getPage(pdfPageNumber),viewport=page.getViewport({scale:zoom/100}),canvas=$('pdfCanvas'),ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1;canvas.width=Math.floor(viewport.width*dpr);canvas.height=Math.floor(viewport.height*dpr);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);$('pdfMessage').hidden=true;canvas.hidden=false;$('pageCounter').textContent=pdfPageNumber+' / '+pdfDocument.numPages;$('pagePrev').disabled=pdfPageNumber<=1;$('pageNext').disabled=pdfPageNumber>=pdfDocument.numPages;await page.render({canvasContext:ctx,viewport}).promise}
+function ensureOSMD(){
+ if(window.opensheetmusicdisplay?.OpenSheetMusicDisplay)return Promise.resolve();
+ if(osmdScriptPromise)return osmdScriptPromise;
+ osmdScriptPromise=new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@2.1.2/build/opensheetmusicdisplay.min.js';
+  script.crossOrigin='anonymous';
+  script.onload=()=>window.opensheetmusicdisplay?.OpenSheetMusicDisplay?resolve():reject(new Error('A biblioteca de partitura carregou sem disponibilizar o renderizador.'));
+  script.onerror=()=>reject(new Error('Não foi possível baixar o renderizador MusicXML. Conecte-se à internet na primeira utilização.'));
+  document.head.appendChild(script);
+ });
+ return osmdScriptPromise;
+}
+async function renderScoreDisplay(){
+ const target=$('scoreRender');target.innerHTML='';
+ try{
+  await ensureOSMD();
+  const OSMD=window.opensheetmusicdisplay.OpenSheetMusicDisplay;
+  osmdInstance=new OSMD(target,{autoResize:true,drawTitle:true,drawSubtitle:true,drawComposer:true,backend:'svg'});
+  await osmdInstance.load(currentScoreXml);
+  await osmdInstance.render();
+  $('scoreRenderMessage').textContent='Partitura renderizada a partir do MusicXML. A imagem de origem do PDF não é alterada.';
+ }catch(e){
+  console.warn('Renderização MusicXML:',e);
+  $('scoreRenderMessage').textContent='A revisão de notas e a reprodução continuam disponíveis, mas a renderização gráfica não carregou: '+e.message;
+ }
+}
+function renderReviewTables(){
+ if(!currentScoreModel)return;
+ const chords=currentScoreModel.chords||[];
+ $('chordReviewTable').innerHTML=chords.length?chords.map(ch=>'<div class="review-row chord-review-row"><span>Compasso '+esc(ch.measure)+' · tempo '+(ch.beat+1).toFixed(2)+'</span><input type="text" data-chord-index="'+ch.xmlIndex+'" value="'+esc(ch.text)+'" aria-label="Cifra do compasso '+esc(ch.measure)+'"></div>').join(''):'<p class="review-empty">Nenhuma cifra foi encontrada no MusicXML.</p>';
+ const notes=currentScoreModel.notes||[];
+ const shown=notes.slice(0,250);
+ $('noteReviewTable').innerHTML=notes.length?'<div class="review-table-head"><span>Comp.</span><span>Tempo</span><span>Parte</span><span>Nota</span><span>Duração</span></div>'+shown.map(n=>'<div class="review-row note-review-row"><span>'+esc(n.measure)+'</span><span>'+(n.beat+1).toFixed(2)+'</span><span title="'+esc(n.partName)+'">'+esc(n.partName)+'</span><input type="text" data-pitch-index="'+n.xmlIndex+'" value="'+formatPitch(n.midi)+'" aria-label="Altura da nota no compasso '+esc(n.measure)+'"><input type="number" min="0.0625" max="16" step="0.0625" data-duration-index="'+n.xmlIndex+'" value="'+Number(n.durationBeats.toFixed(4))+'" aria-label="Duração da nota"></div>').join('')+(notes.length>250?'<p class="review-empty">Exibindo as primeiras 250 notas de '+notes.length+'. A reprodução inclui todas.</p>':''):'<p class="review-empty">Nenhuma nota com altura e duração válidas foi encontrada.</p>';
+}
+async function loadMusicXML(item){
+ try{
+  stopPlayback();
+  currentScoreItem=item;
+  scoreEdits=item.reviewEdits||{notes:{},chords:{}};
+  currentScoreXml=item.processedXml||await item.blob.text();
+  if(!item.processedXml&&(Object.keys(scoreEdits.notes||{}).length||Object.keys(scoreEdits.chords||{}).length))currentScoreXml=applyMusicXmlEdits(currentScoreXml,scoreEdits);
+  currentScoreModel=parseMusicXML(currentScoreXml);
+  playEvents=musicXmlPlaybackEvents(currentScoreModel);
+  currentMidi=item;playIndex=0;pausedAt=0;tempoScale=1;
+  $('tempoControl').value=100;$('tempoValue').textContent='100%';
+  $('scoreWorkspace').classList.remove('hidden');
+  $('scoreTitle').textContent=currentScoreModel.title||item.name;
+  const meter=currentScoreModel.meter;
+  $('scoreDetails').textContent=currentScoreModel.measureCount+' compassos · '+currentScoreModel.notes.length+' notas · '+currentScoreModel.chords.length+' cifras · '+meter.beats+'/'+meter.beatType+' · '+currentScoreModel.bpm+' BPM · '+currentScoreModel.parts.length+' parte(s)';
+  $('midiName').textContent=item.name;
+  $('midiInfo').textContent='MusicXML · '+currentScoreModel.notes.length+' notas reconhecidas · '+currentScoreModel.measureCount+' compassos';
+  $('midiStatus').textContent=playEvents.length?'MusicXML carregado · revise a leitura antes de usar como partitura definitiva.':'O arquivo não contém notas reproduzíveis.';
+  $('playBtn').disabled=!playEvents.length;$('pauseBtn').disabled=true;$('stopBtn').disabled=false;
+  $('progress').value=0;updateClock(0,playEvents.at(-1)?.time||0);
+  renderReviewTables();await renderScoreDisplay();
+  if(currentScoreModel.warnings.length)toast('Partitura importada com '+currentScoreModel.warnings.length+' aviso(s). Revise as notas.');
+  else toast('MusicXML carregado para revisão.');
+ }catch(e){
+  currentScoreItem=null;currentScoreModel=null;playEvents=[];currentMidi=null;
+  $('scoreWorkspace').classList.add('hidden');$('midiStatus').textContent=e.message;
+  $('playBtn').disabled=true;toast('Não foi possível ler MusicXML: '+e.message);
+ }
+}
+async function saveScoreReview(){
+ if(!currentScoreItem||!currentScoreXml)return;
+ try{
+  stopPlayback();
+  currentScoreXml=applyMusicXmlEdits(currentScoreXml,scoreEdits);
+  currentScoreItem.processedXml=currentScoreXml;
+  currentScoreItem.reviewEdits=scoreEdits;
+  currentScoreItem.blob=new Blob([currentScoreXml],{type:'application/vnd.recordare.musicxml+xml'});
+  currentScoreItem.size=currentScoreItem.blob.size;
+  await saveFile(currentScoreItem);
+  currentScoreModel=parseMusicXML(currentScoreXml);
+  playEvents=musicXmlPlaybackEvents(currentScoreModel);
+  currentMidi=currentScoreItem;playIndex=0;pausedAt=0;
+  $('playBtn').disabled=!playEvents.length;$('pauseBtn').disabled=true;$('progress').value=0;
+  $('midiInfo').textContent='MusicXML revisado · '+currentScoreModel.notes.length+' notas · '+currentScoreModel.measureCount+' compassos';
+  updateClock(0,playEvents.at(-1)?.time||0);
+  renderReviewTables();await renderScoreDisplay();
+  toast('Correção salva na biblioteca local.');
+ }catch(e){toast('Falha ao salvar correção: '+e.message)}
+}
+async function handleReviewChange(e){
+ const target=e.target;
+ if(target.dataset.pitchIndex!==undefined){
+  const index=Number(target.dataset.pitchIndex),note=currentScoreModel?.notes.find(n=>n.xmlIndex===index),midi=parsePitchText(target.value);
+  if(!note||midi===null){toast('Use uma nota como C4, F#3 ou Bb4.');renderReviewTables();return}
+  note.midi=midi;scoreEdits.notes[index]={...(scoreEdits.notes[index]||{}),midi:note.midi,durationBeats:note.durationBeats};
+  await saveScoreReview();return;
+ }
+ if(target.dataset.durationIndex!==undefined){
+  const index=Number(target.dataset.durationIndex),note=currentScoreModel?.notes.find(n=>n.xmlIndex===index),duration=Number(target.value);
+  if(!note||!Number.isFinite(duration)||duration<0.0625||duration>16){toast('A duração deve ficar entre 0,0625 e 16 tempos.');renderReviewTables();return}
+  note.durationBeats=duration;scoreEdits.notes[index]={...(scoreEdits.notes[index]||{}),midi:note.midi,durationBeats:duration};
+  await saveScoreReview();return;
+ }
+ if(target.dataset.chordIndex!==undefined){
+  const index=Number(target.dataset.chordIndex),chord=currentScoreModel?.chords.find(x=>x.xmlIndex===index),text=target.value.trim();
+  if(!chord||!isValidChordText(text)){toast('Cifra não reconhecida. Use formatos como C, Cm, Cmaj7, Dm7, G7 ou F#m7b5.');renderReviewTables();return}
+  scoreEdits.chords[index]=text;chord.text=text;
+  await saveScoreReview();
+ }
+}
+function downloadCurrentXml(){
+ if(!currentScoreXml||!currentScoreItem)return;
+ const blob=new Blob([currentScoreXml],{type:'application/vnd.recordare.musicxml+xml'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=currentScoreItem.name.replace(/\.(xml|musicxml)$/i,'')+'_revisado.musicxml';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function loadSampleScore(){
+ try{
+  const existing=state.items.find(x=>x.name==='Estudo de leitura em Dó maior.musicxml');
+  if(existing){await loadMusicXML(existing);return}
+  const response=await fetch('./samples/teste-omr.musicxml');
+  if(!response.ok)throw new Error('Arquivo de teste não encontrado no servidor.');
+  const blob=await response.blob();
+  const item={id:crypto.randomUUID(),name:'Estudo de leitura em Dó maior.musicxml',type:'musicxml',size:blob.size,addedAt:Date.now(),blob};
+  await saveFile(item);await refresh();await loadMusicXML(item);
+ }catch(e){toast('Não foi possível carregar a partitura de teste: '+e.message)}
+}
 async function removeItem(id){const item=state.items.find(x=>x.id===id);if(!item||!confirm('Excluir "'+item.name+'" desta biblioteca?'))return;if(currentMidi?.id===id)stopPlayback();await deleteFile(id);await refresh();toast('Arquivo removido.')}
 function showView(name){const practice=name==='practice';$('libraryView').classList.toggle('hidden',practice);$('practiceView').classList.toggle('hidden',!practice);document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$('sidebar').classList.remove('open')}
 function readVar(data,pos){let value=0,b;do{if(pos.i>=data.length)throw Error('Arquivo MIDI truncado.');b=data[pos.i++];value=(value<<7)|(b&127)}while(b&128);return value}
@@ -45,7 +170,7 @@ function parseMidi(buffer){
  for(const e of all){seconds+=(e.tick-lastTick)*usPerQuarter/1000000/division;lastTick=e.tick;if(e.type==='tempo'){usPerQuarter=e.us;continue}events.push({...e,time:seconds})}
  return {events,duration:seconds,format,tracks,division};
 }
-async function loadMidi(item){try{stopPlayback();const parsed=parseMidi(await item.blob.arrayBuffer());currentMidi=item;playEvents=parsed.events;playIndex=0;pausedAt=0;$('midiName').textContent=item.name;$('midiInfo').textContent=parsed.tracks+' trilha(s) · '+parsed.events.filter(e=>e.type==='on').length+' notas · '+Math.round(parsed.duration)+' s';$('midiStatus').textContent=parsed.events.length?'MIDI carregado · pronto para tocar':'O arquivo não contém notas reconhecíveis.';$('playBtn').disabled=!parsed.events.length;$('pauseBtn').disabled=true;$('stopBtn').disabled=false;$('progress').value=0;updateClock(0,parsed.duration);toast('MIDI carregado. Toque em PLAY para ouvir.')}catch(e){currentMidi=null;$('midiStatus').textContent=e.message;$('playBtn').disabled=true;toast('Não foi possível ler o MIDI: '+e.message)}}
+async function loadMidi(item){try{stopPlayback();currentScoreItem=null;currentScoreXml='';currentScoreModel=null;scoreEdits={notes:{},chords:{}};$('scoreWorkspace').classList.add('hidden');const parsed=parseMidi(await item.blob.arrayBuffer());currentMidi=item;playEvents=parsed.events;playIndex=0;pausedAt=0;$('midiName').textContent=item.name;$('midiInfo').textContent=parsed.tracks+' trilha(s) · '+parsed.events.filter(e=>e.type==='on').length+' notas · '+Math.round(parsed.duration)+' s';$('midiStatus').textContent=parsed.events.length?'MIDI carregado · pronto para tocar':'O arquivo não contém notas reconhecíveis.';$('playBtn').disabled=!parsed.events.length;$('pauseBtn').disabled=true;$('stopBtn').disabled=false;$('progress').value=0;updateClock(0,parsed.duration);toast('MIDI carregado. Toque em PLAY para ouvir.')}catch(e){currentMidi=null;$('midiStatus').textContent=e.message;$('playBtn').disabled=true;toast('Não foi possível ler o MIDI: '+e.message)}}
 function ensureAudio(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error('Este navegador não oferece Web Audio API.');if(!audioCtx)audioCtx=new AC();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
 function noteOn(e){const ctx=audioCtx,osc=ctx.createOscillator(),gain=ctx.createGain(),freq=440*Math.pow(2,(e.note-69)/12);osc.type='triangle';osc.frequency.value=freq;const at=Math.max(ctx.currentTime,e.when||ctx.currentTime);gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(Math.max(.015,e.velocity/127*.13),at+.012);osc.connect(gain);gain.connect(ctx.destination);osc.start(at);const voice={osc,gain,key:e.channel+':'+e.note};activeVoices.add(voice);if(!noteOn.map)noteOn.map=new Map();const arr=noteOn.map.get(voice.key)||[];arr.push(voice);noteOn.map.set(voice.key,arr)}
 function noteOff(e){const key=e.channel+':'+e.note,arr=noteOn.map?.get(key);if(!arr?.length)return;const v=arr.shift();if(!arr.length)noteOn.map.delete(key);const now=Math.max(audioCtx.currentTime,e.when||audioCtx.currentTime);v.gain.gain.cancelScheduledValues(now);v.gain.gain.setTargetAtTime(.0001,now,.06);v.osc.stop(now+.25);activeVoices.delete(v)}
@@ -63,7 +188,7 @@ $('menuToggle').onclick=()=>$('sidebar').classList.toggle('open');
 $('fileInput').onchange=e=>{importFiles(e.target.files);e.target.value=''};$('emptyImport').onchange=e=>{importFiles(e.target.files);e.target.value=''};
 $('searchInput').oninput=render;$('sortSelect').onchange=render;$('closeViewer').onclick=closeViewer;$('pagePrev').onclick=()=>{if(pdfDocument&&pdfPageNumber>1){pdfPageNumber--;renderPdfPage()}};$('pageNext').onclick=()=>{if(pdfDocument&&pdfPageNumber<pdfDocument.numPages){pdfPageNumber++;renderPdfPage()}};
 $('zoomIn').onclick=()=>{zoom=Math.min(150,zoom+10);applyZoom()};$('zoomOut').onclick=()=>{zoom=Math.max(70,zoom-10);applyZoom()};$('zoomReset').onclick=()=>{zoom=100;applyZoom()};
-$('backLibrary').onclick=()=>showView('library');$('playBtn').onclick=playPlayback;$('pauseBtn').onclick=pausePlayback;$('stopBtn').onclick=stopPlayback;
+$('backLibrary').onclick=()=>showView('library');$('playBtn').onclick=playPlayback;$('pauseBtn').onclick=pausePlayback;$('stopBtn').onclick=stopPlayback;$('playScoreBtn').onclick=playPlayback;$('exportXmlBtn').onclick=downloadCurrentXml;$('loadSampleScore').onclick=loadSampleScore;$('noteReviewTable').addEventListener('change',handleReviewChange);$('chordReviewTable').addEventListener('change',handleReviewChange);
 $('tempoControl').oninput=e=>{const old=tempoScale;tempoScale=Number(e.target.value)/100;$('tempoValue').textContent=Math.round(tempoScale*100)+'%';if(audioCtx&&$('playBtn').disabled){pausedAt=Math.max(0,(audioCtx.currentTime-startedAt)*old);startedAt=audioCtx.currentTime-pausedAt/tempoScale}};
 $('progress').oninput=e=>{if(!$('playBtn').disabled){}else pausePlayback();const total=playEvents.at(-1)?.time||0;pausedAt=total*Number(e.target.value)/100;playIndex=playEvents.findIndex(x=>x.time>=pausedAt);if(playIndex<0)playIndex=playEvents.length;silence();$('playBtn').disabled=false;$('pauseBtn').disabled=true;updateClock(pausedAt,total);$('midiStatus').textContent='Posição ajustada'};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeViewer();$('sidebar').classList.remove('open')}});
