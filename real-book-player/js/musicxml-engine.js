@@ -212,6 +212,7 @@ export function formatPitch(midi) {
   if (!Number.isFinite(n) || n < 0 || n > 127) return '';
   return names[n % 12] + (Math.floor(n / 12) - 1);
 }
+export function isValidChordText(text) { return !!parseChordText(text); }
 export function parsePitchText(text) {
   const m = String(text).trim().match(/^([A-Ga-g])([#b♯♭]?)(-?\d{1,2})$/);
   if (!m) return null;
