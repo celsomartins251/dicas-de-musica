@@ -27,8 +27,8 @@ function ensureOSMD(){
   const script=document.createElement('script');
   script.src='https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@2.1.2/build/opensheetmusicdisplay.min.js';
   script.crossOrigin='anonymous';
-  script.onload=()=>window.opensheetmusicdisplay?.OpenSheetMusicDisplay?resolve():reject(new Error('A biblioteca de partitura carregou sem disponibilizar o renderizador.'));
-  script.onerror=()=>reject(new Error('Não foi possível baixar o renderizador MusicXML. Conecte-se à internet na primeira utilização.'));
+  script.onload=()=>{if(window.opensheetmusicdisplay?.OpenSheetMusicDisplay)resolve();else{osmdScriptPromise=null;reject(new Error('A biblioteca de partitura carregou sem disponibilizar o renderizador.'))}};
+  script.onerror=()=>{osmdScriptPromise=null;reject(new Error('Não foi possível baixar o renderizador MusicXML. Conecte-se à internet na primeira utilização.'))};
   document.head.appendChild(script);
  });
  return osmdScriptPromise;
