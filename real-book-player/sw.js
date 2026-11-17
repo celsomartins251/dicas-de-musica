@@ -1,4 +1,4 @@
-const CACHE='real-book-player-v8';
+const CACHE='real-book-player-v9';
 const CORE=['./','./index.html','./css/app.css','./js/app.js','./js/musicxml-engine.js','./manifest.webmanifest','./samples/teste-omr.musicxml'];
 const APP_SCOPE=new URL(self.registration.scope).pathname;
 function allowedCdn(url){
