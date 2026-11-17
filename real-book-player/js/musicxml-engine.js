@@ -148,7 +148,8 @@ function parseMusicXML(xmlText) {
         }
       }
       const nominal = beats * 4 / beatType;
-      measures.push({ measureNumber, notes, chords, tempos, length:maxCursor || nominal, nominal, meter:{beats,beatType} });
+      if (maxCursor > nominal + 0.001) warnings.push('Compasso ' + measureNumber + ' excede a fórmula de compasso (' + maxCursor.toFixed(2) + ' tempos; esperado ' + nominal.toFixed(2) + ').');
+      measures.push({ measureNumber, notes, chords, tempos, length:nominal || maxCursor, nominal, meter:{beats,beatType} });
     }
     parsedParts.push({ id:part.getAttribute('id') || String(partIndex + 1), name:partNames[part.getAttribute('id')] || ('Parte ' + (partIndex + 1)), measures });
   }
