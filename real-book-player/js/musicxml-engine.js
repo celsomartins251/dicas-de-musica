@@ -247,7 +247,7 @@ function setChildText(parent, name, text) {
   let el = child(parent, name);
   if (!el) {
     el = parent.ownerDocument.createElement(name);
-    const order = parent.localName === 'pitch' ? ['step','alter','octave'] : parent.localName === 'root' ? ['root-step','root-alter','root-degree'] : [];
+    const order = parent.localName === 'pitch' ? ['step','alter','octave'] : parent.localName === 'root' ? ['root-step','root-alter','root-degree'] : parent.localName === 'attributes' ? ['divisions','key','time','staves','part-symbol','instruments','clef','staff-details','transpose'] : [];
     const target = order.indexOf(name);
     const next = target < 0 ? null : Array.from(parent.children).find(x => order.indexOf(x.localName) > target);
     if (next) parent.insertBefore(el, next); else parent.appendChild(el);
@@ -255,50 +255,78 @@ function setChildText(parent, name, text) {
   el.textContent = String(text);
   return el;
 }
+function gcd(a,b){return b?gcd(b,a%b):Math.abs(a);}
+function lcm(a,b){return Math.abs(a*b)/gcd(a,b);}
 export function applyMusicXmlEdits(xmlText, edits = {}) {
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length) throw new Error('Não foi possível atualizar o MusicXML.');
   const root = doc.documentElement;
-  let noteIndex = 0, divisions = 1;
+  let noteIndex = 0;
   for (const part of children(root, 'part')) {
+    let currentDivisions = 1;
+    const measureInfos = [];
     for (const measure of children(part, 'measure')) {
+      const noteRecords = [], durationRecords = [];
       for (const node of Array.from(measure.children)) {
         if (node.localName === 'attributes') {
           const d = Number(value(node, 'divisions'));
-          if (d > 0) divisions = d;
-        } else if (node.localName === 'note') {
-          const edit = edits.notes?.[noteIndex];
-          if (edit) {
-            if (Number.isFinite(edit.midi)) {
-              const pitch = child(node, 'pitch');
-              if (pitch) {
-                const names = ['C','C','D','D','E','F','F','G','G','A','A','B'];
-                const alters = [0,1,0,1,0,0,1,0,1,0,1,0];
-                const midi = Math.round(edit.midi), pc = midi % 12;
-                setChildText(pitch, 'step', names[pc]);
-                const alter = alters[pc];
-                setChildText(pitch, 'alter', alter);
-                setChildText(pitch, 'octave', Math.floor(midi / 12) - 1);
-                const accidental = child(node, 'accidental');
-                if (accidental) accidental.textContent = ({0:'natural',1:'sharp',2:'double-sharp',11:'flat',10:'flat',9:'flat'}[pc] || accidental.textContent);
-              }
-            }
-            if (Number.isFinite(edit.durationBeats) && edit.durationBeats > 0) {
-              const ticks = Math.max(1, Math.round(edit.durationBeats * divisions));
-              setChildText(node, 'duration', ticks);
-              const notation = notationForDuration(edit.durationBeats);
-              if (notation) {
-                setChildText(node, 'type', notation.type);
-                for (const dot of children(node, 'dot')) dot.remove();
-                const typeNode = child(node, 'type');
-                for (let d = 0; d < notation.dots; d++) {
-                  const dot = doc.createElement('dot');
-                  if (typeNode) node.insertBefore(dot, typeNode.nextSibling); else node.appendChild(dot);
-                }
-              }
+          if (d > 0) currentDivisions = d;
+        } else if (node.localName === 'note' || node.localName === 'backup' || node.localName === 'forward') {
+          const duration = child(node, 'duration');
+          if (duration) durationRecords.push({ duration, divisions:currentDivisions });
+          if (node.localName === 'note') noteRecords.push({ node, index:noteIndex++, edit:edits.notes?.[noteIndex-1], divisions:currentDivisions });
+        }
+      }
+      measureInfos.push({ measure, noteRecords, durationRecords });
+    }
+    const hasDurationEdit = measureInfos.some(info => info.noteRecords.some(record => Number.isFinite(record.edit?.durationBeats) && record.edit.durationBeats > 0));
+    let commonDivisions = 1;
+    for (const info of measureInfos) for (const record of info.durationRecords) commonDivisions = lcm(commonDivisions, record.divisions);
+    if (hasDurationEdit) commonDivisions = lcm(commonDivisions, 16);
+    if (commonDivisions > 65536) throw new Error('A divisão rítmica deste arquivo é complexa demais para a revisão automática.');
+    for (const info of measureInfos) {
+      if (hasDurationEdit) {
+        for (const record of info.durationRecords) {
+          const factor = commonDivisions / record.divisions;
+          record.duration.textContent = String(Math.round(Number(record.duration.textContent) * factor));
+        }
+        let attrs = children(info.measure, 'attributes')[0];
+        if (!attrs) {
+          attrs = doc.createElement('attributes');
+          info.measure.insertBefore(attrs, info.measure.firstChild);
+        }
+        setChildText(attrs, 'divisions', commonDivisions);
+        for (const otherAttrs of children(info.measure, 'attributes')) setChildText(otherAttrs, 'divisions', commonDivisions);
+      }
+      for (const record of info.noteRecords) {
+        const { node, edit } = record;
+        if (!edit) continue;
+        if (Number.isFinite(edit.midi)) {
+          const pitch = child(node, 'pitch');
+          if (pitch) {
+            const names = ['C','C','D','D','E','F','F','G','G','A','A','B'];
+            const alters = [0,1,0,1,0,0,1,0,1,0,1,0];
+            const midi = Math.round(edit.midi), pc = midi % 12, alter = alters[pc];
+            setChildText(pitch, 'step', names[pc]);
+            setChildText(pitch, 'alter', alter);
+            setChildText(pitch, 'octave', Math.floor(midi / 12) - 1);
+            const accidental = child(node, 'accidental');
+            if (accidental) accidental.textContent = alter ? 'sharp' : 'natural';
+          }
+        }
+        if (Number.isFinite(edit.durationBeats) && edit.durationBeats > 0) {
+          const ticks = Math.max(1, Math.round(edit.durationBeats * (hasDurationEdit ? commonDivisions : record.divisions)));
+          setChildText(node, 'duration', ticks);
+          const notation = notationForDuration(edit.durationBeats);
+          if (notation) {
+            setChildText(node, 'type', notation.type);
+            for (const dot of children(node, 'dot')) dot.remove();
+            const typeNode = child(node, 'type');
+            for (let d = 0; d < notation.dots; d++) {
+              const dot = doc.createElement('dot');
+              if (typeNode) node.insertBefore(dot, typeNode.nextSibling); else node.appendChild(dot);
             }
           }
-          noteIndex++;
         }
       }
     }
@@ -309,11 +337,11 @@ export function applyMusicXmlEdits(xmlText, edits = {}) {
     if (!text) return;
     const parsed = parseChordText(text);
     if (!parsed) return;
-    const root = child(node, 'root');
-    if (root) {
-      setChildText(root, 'root-step', parsed.step);
-      const oldAlter = child(root, 'root-alter');
-      if (parsed.alter) setChildText(root, 'root-alter', parsed.alter);
+    const harmonyRoot = child(node, 'root');
+    if (harmonyRoot) {
+      setChildText(harmonyRoot, 'root-step', parsed.step);
+      const oldAlter = child(harmonyRoot, 'root-alter');
+      if (parsed.alter) setChildText(harmonyRoot, 'root-alter', parsed.alter);
       else if (oldAlter) oldAlter.remove();
     }
     const kind = child(node, 'kind');
