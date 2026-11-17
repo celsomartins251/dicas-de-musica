@@ -84,7 +84,7 @@ function parseMusicXML(xmlText) {
   let xmlNoteIndex = 0, xmlChordIndex = 0;
   const parsedParts = [];
   const warnings = [];
-  let initialBpm = 120;
+  let initialBpm = 120, hasInitialTempo = false;
   for (let partIndex = 0; partIndex < partEls.length; partIndex++) {
     const part = partEls[partIndex];
     let divisions = 1, fifths = 0, beats = 4, beatType = 4;
@@ -143,7 +143,7 @@ function parseMusicXML(xmlText) {
           const bpm = soundTempo > 0 ? soundTempo : printedTempo;
           if (bpm > 0) {
             tempos.push({ beat:cursor, bpm });
-            if (initialBpm === 120) initialBpm = bpm;
+            if (!hasInitialTempo) { initialBpm = bpm; hasInitialTempo = true; }
           }
         }
       }
@@ -234,6 +234,14 @@ function parseChordText(text) {
   if (!kind) return null;
   return { step:m[1].toUpperCase(), alter:m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0, kind, text:suffix };
 }
+function notationForDuration(beats) {
+  const values = Object.entries(TYPE_BEATS).sort((a,b) => b[1] - a[1]);
+  for (const [type, base] of values) for (let dots = 0; dots <= 2; dots++) {
+    const value = base * (2 - Math.pow(.5, dots));
+    if (Math.abs(value - beats) < .0001) return { type, dots };
+  }
+  return null;
+}
 function setChildText(parent, name, text) {
   let el = child(parent, name);
   if (!el) { el = parent.ownerDocument.createElement(name); parent.appendChild(el); }
@@ -271,6 +279,12 @@ export function applyMusicXmlEdits(xmlText, edits = {}) {
             if (Number.isFinite(edit.durationBeats) && edit.durationBeats > 0) {
               const ticks = Math.max(1, Math.round(edit.durationBeats * divisions));
               setChildText(node, 'duration', ticks);
+              const notation = notationForDuration(edit.durationBeats);
+              if (notation) {
+                setChildText(node, 'type', notation.type);
+                for (const dot of children(node, 'dot')) dot.remove();
+                for (let d = 0; d < notation.dots; d++) node.appendChild(doc.createElement('dot'));
+              }
             }
           }
           noteIndex++;
