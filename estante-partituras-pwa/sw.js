@@ -10,7 +10,7 @@ self.addEventListener('install',event=>{
     const response=await fetch(new Request(APP_URL,{cache:'reload',credentials:'omit'}));
     if(!response.ok) throw new Error('Falha ao baixar o aplicativo: HTTP '+response.status);
     const source=await response.clone().text();
-    if(source.length<1000000||!/<\\/html>\\s*$/i.test(source)) throw new Error('Arquivo do aplicativo incompleto');
+    if(source.length<1000000||!/<\/html>\s*$/i.test(source)) throw new Error('Arquivo do aplicativo incompleto');
     if(!source.includes("APP_VERSION='"+VERSION+"'")) throw new Error('Versão publicada não corresponde ao Service Worker');
     const cache=await caches.open(CACHE);
     await cache.put(APP_URL,response);
