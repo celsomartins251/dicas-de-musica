@@ -8,6 +8,7 @@
 <link rel="apple-touch-icon" href="./icons/cifra-pauta.svg?v=1">
 <link rel="manifest" href="./cifra-pauta.webmanifest?v=1">
 <meta name="theme-color" content="#b43a08">
+<meta name="app-version" content="initial-20261118">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cifra &amp; Pauta">
@@ -636,31 +637,91 @@ R();E();
 </script>
 
 <script>
-/* PWA Cifra & Pauta: verifica atualizações sem recarregar uma edição em andamento. */
+/* PWA Cifra & Pauta: detecta versões publicadas e oferece atualização sem interromper a edição. */
 (async function () {
   if (!("serviceWorker" in navigator)) return;
-  async function checkPwaUpdate() {
+
+  const currentVersion = document.querySelector('meta[name="app-version"]')?.content || "initial";
+  const versionUrl = new URL("./cifra-pauta-version.json", location.href);
+  let banner, lastRemoteVersion = currentVersion;
+
+  function showUpdate(version) {
+    if (banner || version === currentVersion) return;
+    banner = document.createElement("section");
+    banner.id = "cifra-pauta-update";
+    banner.setAttribute("role", "status");
+    banner.innerHTML = `
+      <div class="cp-update-copy">
+        <strong>Nova atualização disponível</strong>
+        <span>Uma nova versão do Cifra &amp; Pauta está pronta.</span>
+      </div>
+      <div class="cp-update-actions">
+        <button type="button" data-later>Mais tarde</button>
+        <button type="button" data-update>Atualizar agora</button>
+      </div>`;
+    const style = document.createElement("style");
+    style.textContent = `
+      #cifra-pauta-update{position:fixed;z-index:99999;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 16px;background:#201b16;color:#fff8eb;border:1px solid #d97706;border-radius:12px;box-shadow:0 8px 32px #0006;font:14px/1.35 system-ui,sans-serif}
+      #cifra-pauta-update .cp-update-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:170px}
+      #cifra-pauta-update .cp-update-copy strong{font-size:15px}
+      #cifra-pauta-update .cp-update-copy span{opacity:.88}
+      #cifra-pauta-update .cp-update-actions{display:flex;gap:8px}
+      #cifra-pauta-update button{min-height:38px;padding:7px 12px;border:1px solid #b98b42;border-radius:8px;background:#30271c;color:#fff8eb;font:600 13px system-ui,sans-serif}
+      #cifra-pauta-update button[data-update]{background:#c2410c;border-color:#c2410c}
+      @media(max-width:420px){#cifra-pauta-update .cp-update-actions{width:100%}#cifra-pauta-update button{flex:1}}
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(banner);
+    banner.querySelector("[data-later]").addEventListener("click", () => {
+      banner.remove(); banner = null;
+    });
+    banner.querySelector("[data-update]").addEventListener("click", () => {
+      // O editor grava as alterações no localStorage durante a edição.
+      const target = new URL(location.href);
+      target.searchParams.set("app-update", version);
+      location.replace(target.href);
+    });
+  }
+
+  async function checkVersion() {
     if (!navigator.onLine) return;
     try {
-      let registration = await navigator.serviceWorker.getRegistration(location.href);
-      if (registration) {
-        await registration.update();
-      } else {
-        registration = await navigator.serviceWorker.register("./service-worker.js", {
-          scope: "./",
-          updateViaCache: "none"
-        });
-        await registration.update();
+      const url = new URL(versionUrl.href);
+      url.searchParams.set("_", String(Date.now()));
+      const response = await fetch(url.href, {cache:"no-store", credentials:"same-origin"});
+      if (!response.ok) return;
+      const info = await response.json();
+      const remote = String(info.version || "");
+      if (remote && remote !== currentVersion) {
+        lastRemoteVersion = remote;
+        showUpdate(remote);
       }
     } catch (error) {
-      console.warn("Atualização PWA indisponível no momento:", error);
+      console.debug("Não foi possível consultar a versão do Cifra & Pauta:", error);
     }
   }
-  window.addEventListener("load", checkPwaUpdate, {once:true});
-  window.addEventListener("online", checkPwaUpdate);
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") checkPwaUpdate();
+
+  async function registerAndCheck() {
+    if (!navigator.onLine) return;
+    try {
+      const registration = await navigator.serviceWorker.register("./service-worker.js", {
+        scope: "./",
+        updateViaCache: "none"
+      });
+      await registration.update();
+      await checkVersion();
+    } catch (error) {
+      console.warn("Verificação PWA indisponível no momento:", error);
+    }
+  }
+
+  window.addEventListener("load", registerAndCheck, {once:true});
+  window.addEventListener("online", registerAndCheck);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") registerAndCheck();
   });
+  // Enquanto o app estiver aberto, verifica novas publicações periodicamente.
+  window.setInterval(checkVersion, 120000);
 })();
 </script>
 
