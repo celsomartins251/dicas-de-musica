@@ -4,7 +4,7 @@
   "short_name": "Dicas de Música",
   "description": "Plataforma de estudos musicais de Celso Martins.",
   "lang": "pt-BR",
-  "start_url": "./app-acesso.html?v=20261113",
+  "start_url": "./app-acesso.html?v=20261118.2",
   "scope": "./",
   "display": "standalone",
   "display_override": [
