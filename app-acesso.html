@@ -102,8 +102,24 @@
 
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // A plataforma não registra o Service Worker do Cifra & Pauta.
-    // Cada aplicativo mantém seu próprio escopo para evitar interferência entre páginas.
+    // Migração segura: remove somente o antigo registro raiz do Cifra & Pauta.
+    // Não toca nos Service Workers dos aplicativos, que usam escopos próprios.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const rootScope = new URL('./', window.location.href).href;
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            const script = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
+            if (registration.scope === rootScope && new URL(script).pathname.endsWith('/service-worker.js')) {
+              await registration.unregister();
+            }
+          }
+        } catch (error) {
+          console.warn('Não foi possível limpar o antigo registro compartilhado:', error);
+        }
+      }, { once: true });
+    }
 
     function showMessage(text, success = false) {
       message.textContent = text;
