@@ -16,7 +16,7 @@
   "theme_color": "#b43a08",
   "icons": [
     {
-      "src": "./icons/cifra-pauta.svg",
+      "src": "./icons/cifra-pauta.svg?v=20261118.2",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
