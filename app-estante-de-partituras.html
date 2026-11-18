@@ -355,4 +355,22 @@ stage.addEventListener('contextmenu',e=>{if(active||timer||ruler.classList.conta
 })();
 </script>
 
+
+<!-- Abertura original preservada: animação termina e libera a interface. -->
+<script id="estante-splash-controller">
+(()=> {
+  const finish=()=>{
+    const splash=document.getElementById('splash');
+    if(!splash||splash.dataset.dismissed==='1') return;
+    splash.dataset.dismissed='1';
+    splash.style.opacity='0';
+    splash.style.pointerEvents='none';
+    window.setTimeout(()=>splash.remove(),550);
+  };
+  const start=()=>window.setTimeout(finish,1600);
+  if(document.readyState==='complete') start();
+  else window.addEventListener('load',start,{once:true});
+  window.setTimeout(finish,6000);
+})();
+</script>
 </body></html>
