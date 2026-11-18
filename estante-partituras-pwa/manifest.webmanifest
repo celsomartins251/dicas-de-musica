@@ -1,0 +1,25 @@
+{
+  "id": "./index.html",
+  "name": "Estante de Partituras — Celso Martins",
+  "short_name": "Estante",
+  "description": "Biblioteca musical offline para organizar, visualizar e estudar partituras em PDF.",
+  "lang": "pt-BR",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#10100e",
+  "theme_color": "#10100e",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
