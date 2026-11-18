@@ -1,0 +1,53 @@
+name: Atualizar versão do Cifra & Pauta
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app-cifra-&-pauta.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Atualizar identificador da versão
+        env:
+          BUILD_VERSION: ${{ github.sha }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const htmlPath = 'app-cifra-&-pauta.html';
+          let html = fs.readFileSync(htmlPath, 'utf8');
+          const version = process.env.BUILD_VERSION;
+          const tag = '<meta name="app-version" content="' + version + '">';
+          if (/<meta name="app-version" content="[^"]*">/.test(html)) {
+            html = html.replace(/<meta name="app-version" content="[^"]*">/, tag);
+          } else {
+            html = html.replace('<meta name="theme-color" content="#b43a08">', '<meta name="theme-color" content="#b43a08">\\n' + tag);
+          }
+          fs.writeFileSync(htmlPath, html);
+          fs.writeFileSync('cifra-pauta-version.json', JSON.stringify({
+            version,
+            updated_at: new Date().toISOString()
+          }, null, 2) + '\\n');
+          NODE
+      - name: Publicar identificador
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'app-cifra-&-pauta.html' cifra-pauta-version.json
+          if git diff --cached --quiet; then
+            echo "Versão já está atualizada."
+            exit 0
+          fi
+          git commit -m "chore: atualiza versão PWA do Cifra & Pauta"
+          git push
