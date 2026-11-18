@@ -643,10 +643,10 @@ R();E();
 
   const currentVersion = document.querySelector('meta[name="app-version"]')?.content || "initial";
   const versionUrl = new URL("./cifra-pauta-version.json", location.href);
-  let banner, lastRemoteVersion = currentVersion;
+  let banner, lastRemoteVersion = currentVersion, dismissedVersion = "";
 
   function showUpdate(version) {
-    if (banner || version === currentVersion) return;
+    if (banner || version === currentVersion || version === dismissedVersion) return;
     banner = document.createElement("section");
     banner.id = "cifra-pauta-update";
     banner.setAttribute("role", "status");
@@ -673,10 +673,11 @@ R();E();
     document.head.appendChild(style);
     document.body.appendChild(banner);
     banner.querySelector("[data-later]").addEventListener("click", () => {
-      banner.remove(); banner = null;
+      banner.remove(); banner = null; dismissedVersion = lastRemoteVersion;
     });
     banner.querySelector("[data-update]").addEventListener("click", () => {
-      // O editor grava as alterações no localStorage durante a edição.
+      // Garante que o estado atual do editor seja gravado antes de recarregar.
+      try { if (typeof save === "function") save(); } catch (error) {}
       const target = new URL(location.href);
       target.searchParams.set("app-update", version);
       location.replace(target.href);
