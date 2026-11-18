@@ -8,7 +8,6 @@
 <link rel="apple-touch-icon" href="./icons/cifra-pauta.svg?v=1">
 <link rel="manifest" href="./cifra-pauta.webmanifest?v=1">
 <meta name="theme-color" content="#b43a08">
-<meta name="app-version" content="15217554fa94413742fb121b6f95adf7a55add8c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cifra &amp; Pauta">
@@ -637,16 +636,17 @@ R();E();
 </script>
 
 <script>
-/* PWA Cifra & Pauta: detecta versões publicadas e oferece atualização sem interromper a edição. */
+/* PWA Cifra & Pauta: consulta o último commit do próprio HTML e avisa quando há nova versão. */
 (async function () {
   if (!("serviceWorker" in navigator)) return;
 
-  const currentVersion = document.querySelector('meta[name="app-version"]')?.content || "initial";
-  const versionUrl = new URL("./cifra-pauta-version.json", location.href);
-  let banner, lastRemoteVersion = currentVersion, dismissedVersion = "";
+  const VERSION_KEY = "cp2-pwa-remote-commit";
+  const COMMIT_API = "https://api.github.com/repos/celsomartins251/dicas-de-musica/commits?path=" +
+    encodeURIComponent("app-cifra-&-pauta.html") + "&per_page=1";
+  let banner = null, remoteCommit = "", dismissedCommit = "";
 
-  function showUpdate(version) {
-    if (banner || version === currentVersion || version === dismissedVersion) return;
+  function showUpdate(commit) {
+    if (banner || !commit || commit === dismissedCommit) return;
     banner = document.createElement("section");
     banner.id = "cifra-pauta-update";
     banner.setAttribute("role", "status");
@@ -673,56 +673,77 @@ R();E();
     document.head.appendChild(style);
     document.body.appendChild(banner);
     banner.querySelector("[data-later]").addEventListener("click", () => {
-      banner.remove(); banner = null; dismissedVersion = lastRemoteVersion;
+      dismissedCommit = remoteCommit;
+      banner.remove();
+      banner = null;
     });
     banner.querySelector("[data-update]").addEventListener("click", () => {
-      // Garante que o estado atual do editor seja gravado antes de recarregar.
-      try { if (typeof save === "function") save(); } catch (error) {}
+      // O editor salva os dados no localStorage durante a edição.
+      try {
+        if (typeof save === "function") save();
+        localStorage.setItem(VERSION_KEY, commit);
+      } catch (error) {}
       const target = new URL(location.href);
-      target.searchParams.set("app-update", version);
+      target.searchParams.set("app-update", commit.slice(0, 12));
       location.replace(target.href);
     });
   }
 
-  async function checkVersion() {
+  async function checkForNewVersion() {
     if (!navigator.onLine) return;
     try {
-      const url = new URL(versionUrl.href);
-      url.searchParams.set("_", String(Date.now()));
-      const response = await fetch(url.href, {cache:"no-store", credentials:"same-origin"});
+      const response = await fetch(COMMIT_API, {
+        cache: "no-store",
+        headers: { "Accept": "application/vnd.github+json" }
+      });
       if (!response.ok) return;
-      const info = await response.json();
-      const remote = String(info.version || "");
-      if (remote && remote !== currentVersion) {
-        lastRemoteVersion = remote;
-        showUpdate(remote);
+      const commits = await response.json();
+      const latest = commits && commits[0] && commits[0].sha;
+      if (!latest) return;
+
+      let known = "";
+      try { known = localStorage.getItem(VERSION_KEY) || ""; } catch (error) {}
+      if (!known) {
+        // Na primeira execução, registra a versão atual sem exibir aviso falso.
+        try { localStorage.setItem(VERSION_KEY, latest); } catch (error) {}
+        return;
+      }
+      if (latest !== known) {
+        remoteCommit = latest;
+        showUpdate(latest);
       }
     } catch (error) {
-      console.debug("Não foi possível consultar a versão do Cifra & Pauta:", error);
+      // Sem rede ou limite temporário da API: tenta novamente na próxima verificação.
+      console.debug("Não foi possível verificar atualizações do Cifra & Pauta:", error);
     }
   }
 
-  async function registerAndCheck() {
-    if (!navigator.onLine) return;
+  async function registerPwa() {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js", {
+      await navigator.serviceWorker.register("./service-worker.js", {
         scope: "./",
         updateViaCache: "none"
       });
-      await registration.update();
-      await checkVersion();
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) await registration.update();
     } catch (error) {
-      console.warn("Verificação PWA indisponível no momento:", error);
+      console.warn("Registro PWA indisponível no momento:", error);
     }
   }
 
-  window.addEventListener("load", registerAndCheck, {once:true});
-  window.addEventListener("online", registerAndCheck);
+  window.addEventListener("load", () => {
+    registerPwa();
+    checkForNewVersion();
+  }, { once: true });
+  window.addEventListener("online", checkForNewVersion);
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") registerAndCheck();
+    if (document.visibilityState === "visible") {
+      registerPwa();
+      checkForNewVersion();
+    }
   });
-  // Enquanto o app estiver aberto, verifica novas publicações periodicamente.
-  window.setInterval(checkVersion, 120000);
+  // Consulta a cada cinco minutos enquanto o aplicativo estiver aberto.
+  window.setInterval(checkForNewVersion, 300000);
 })();
 </script>
 
