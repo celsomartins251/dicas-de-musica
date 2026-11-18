@@ -44,6 +44,25 @@
 
 <script type="module">
 import {firebaseConfig} from './firebase-config.js';
+
+// Remove somente o antigo Service Worker do Cifra que controlava toda a raiz do site.
+// Os aplicativos mantêm seus registros próprios e seus dados não são apagados.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const rootScope = new URL('./', window.location.href).href;
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        const script = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
+        if (registration.scope === rootScope && new URL(script).pathname.endsWith('/service-worker.js')) {
+          await registration.unregister();
+        }
+      }
+    } catch (error) {
+      console.warn('Não foi possível limpar o antigo registro compartilhado:', error);
+    }
+  }, { once: true });
+}
 (async()=>{
 'use strict';
 const V='10.12.2',G='https://www.gstatic.com/firebasejs/'+V+'/';
