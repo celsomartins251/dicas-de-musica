@@ -5,7 +5,7 @@
   "description": "Editor de cifras e partituras Cifra & Pauta.",
   "lang": "pt-BR",
   "start_url": "./app-cifra-%26-pauta.html",
-  "scope": "./",
+  "scope": "./app-cifra-%26-pauta.html",
   "display": "standalone",
   "display_override": [
     "standalone",
