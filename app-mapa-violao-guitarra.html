@@ -1993,5 +1993,56 @@
   });
 })();
 </script>
+
+<!-- CM_MAPAS_UPDATE_CHECK_V1 -->
+<style>
+#cm-map-update{position:fixed;z-index:2147483000;right:14px;bottom:14px;max-width:min(360px,calc(100vw - 28px));padding:14px 16px;background:#151a20;color:#fff;border:1px solid #c9a64a;border-radius:12px;box-shadow:0 8px 28px #0009;font:14px/1.45 system-ui,sans-serif;display:none}
+#cm-map-update strong{display:block;color:#f1d47a;margin-bottom:4px}
+#cm-map-update button{margin-top:10px;background:#c9a64a;color:#171717;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
+#cm-map-update small{display:block;color:#c8c8c8;margin-top:5px}
+</style>
+<div id="cm-map-update" role="status" aria-live="polite">
+  <strong>Atualização disponível</strong>
+  <span>Uma nova versão deste mapa está pronta.</span><br>
+  <button type="button" id="cm-map-update-action">Atualizar agora</button>
+  <small>Você pode continuar estudando e atualizar quando desejar.</small>
+</div>
+<script>
+(function(){
+  'use strict';
+  const CM_MAP_APP_VERSION='2026.11.19.1';
+  const CM_MAP_APP_KEY='violaoGuitarra';
+  const box=document.getElementById('cm-map-update');
+  const action=document.getElementById('cm-map-update-action');
+  let remoteVersion='';
+  async function checkMapUpdate(){
+    if(!navigator.onLine)return;
+    try{
+      const url=new URL('./mapas-version.json',location.href);
+      url.searchParams.set('_',String(Date.now()));
+      const response=await fetch(url.href,{cache:'no-store',credentials:'same-origin'});
+      if(!response.ok)throw new Error('Falha ao consultar a versão');
+      const data=await response.json();
+      const available=String(data[CM_MAP_APP_KEY]||'');
+      if(available && available!==CM_MAP_APP_VERSION){
+        remoteVersion=available;
+        box.style.display='block';
+      }
+    }catch(error){
+      // Sem conexão ou servidor indisponível: mantém o aplicativo atual funcionando.
+    }
+  }
+  action.addEventListener('click',function(){
+    if(!remoteVersion)return;
+    const next=new URL(location.href);
+    next.searchParams.set('cm-update',remoteVersion);
+    location.replace(next.href);
+  });
+  window.addEventListener('online',checkMapUpdate);
+  checkMapUpdate();
+  setInterval(checkMapUpdate,30*60*1000);
+})();
+</script>
+
 </body>
 </html>
