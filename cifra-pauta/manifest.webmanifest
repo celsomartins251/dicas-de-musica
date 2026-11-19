@@ -1,0 +1,14 @@
+{
+  "id":"./",
+  "name":"Cifra & Pauta — Celso Martins",
+  "short_name":"Cifra & Pauta",
+  "description":"Editor de cifras e partituras com funcionamento offline.",
+  "lang":"pt-BR",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "orientation":"any",
+  "background_color":"#10100e",
+  "theme_color":"#10100e",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
