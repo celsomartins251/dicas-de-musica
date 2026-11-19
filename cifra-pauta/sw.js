@@ -1,6 +1,6 @@
 /* Cifra & Pauta — cache offline independente, escopo /cifra-pauta/ */
 'use strict';
-const CACHE = 'cifra-pauta-offline-v1';
+const CACHE = 'cifra-pauta-offline-v2';
 const CORE = ['./index.html','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil((async()=>{
