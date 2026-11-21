@@ -1,5 +1,5 @@
 /* BaixoScore Pro — cache isolado da plataforma Dicas de Música. */
-const CACHE='baixoscore-v1.0.6';
+const CACHE='baixoscore-v1.0.7';
 const APP_URL=new URL('./app-baixoscore-pro.html',self.location.href).href;
 const FILES=['./','./app-baixoscore-pro.html','./baixoscore-manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{
