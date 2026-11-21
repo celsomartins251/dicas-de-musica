@@ -52,7 +52,7 @@ let A,F,auth,fs,sec=null;
 let db={students:[],apps:[],notes:[]},role=(()=>{const a=new URLSearchParams(location.search).get('cmreturn');return a==='teacher'||location.hash==='#professor'?'teacher':a==='student'?'student':(localStorage.getItem('cm_platform_role')==='teacher'?'teacher':'student')})(),managerStudentId=null,loginInProgress=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function appHref(url,area,name=''){try{const isBaixoScore=/baixo[\\s-]?score/i.test(String(name))||/app-baixoscore-pro\\.html/i.test(String(url));const target=isBaixoScore?'./app-baixoscore-pro.html':url;const u=new URL(target,location.href);u.searchParams.set('cmreturn',area);return u.href}catch(e){return url}}
+function appHref(url,area,name=''){try{const isBaixoScore=/baixo[\s-]?score/i.test(String(name))||/app-baixoscore-pro\.html/i.test(String(url));const target=isBaixoScore?'./app-baixoscore-pro.html':url;const u=new URL(target,location.href);u.searchParams.set('cmreturn',area);return u.href}catch(e){return url}}
 function showModal(id){$(id).classList.add('on');setTimeout(()=>$(id).querySelector('input')?.focus(),30)}
 function hideModal(id){$(id).classList.remove('on')}
 function updateEntryRoute(){const a=new URLSearchParams(location.search).get('cmreturn');const isTeacherRoute=a==='teacher'||(!a&&location.hash==='#professor')||(!a&&!location.hash&&localStorage.getItem('cm_platform_role')==='teacher');if(!$('homeView').classList.contains('hidden'))role=isTeacherRoute?'teacher':'student';$('studentEntry').classList.toggle('hidden',isTeacherRoute);$('teacherEntry').classList.toggle('hidden',!isTeacherRoute)}
