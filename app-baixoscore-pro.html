@@ -989,10 +989,10 @@ if(window.ResizeObserver)new ResizeObserver(()=>drawWave()).observe(document.que
 $('off').addEventListener('input',()=>{S.offManual=true});addEventListener('resize',drawWave);drawWave();
 </script>
 <script>
-/* BaixoScore Pro — controle de versão e abertura. A checagem é opcional: o app abre offline. */
+/* BaixoScore Pro — atualização PWA e APK. O app continua abrindo normalmente offline. */
 (()=>{
-  const APP_VERSION='1.0.0';
-  const VERSION_URL=new URL('baixoscore-version.json',location.href).href;
+  const APP_VERSION='1.0.1';
+  const VERSION_URL='https://raw.githubusercontent.com/celsomartins251/dicas-de-musica/main/baixoscore-version.json';
   const splash=document.getElementById('bootSplash');
   const logo=document.getElementById('bootLogo');
   const originalLogo=document.querySelector('.hero .brand-icon');
@@ -1004,7 +1004,7 @@ $('off').addEventListener('input',()=>{S.offManual=true});addEventListener('resi
 
   const notice=document.getElementById('bsUpdateNotice');
   const updateBtn=document.getElementById('bsUpdateNow');
-  let latestVersion='';
+  let latestVersion='',latestApkUrl='';
   const compare=(a,b)=>{const aa=String(a).split('.').map(x=>parseInt(x,10)||0),bb=String(b).split('.').map(x=>parseInt(x,10)||0);for(let i=0;i<Math.max(aa.length,bb.length);i++){const d=(aa[i]||0)-(bb[i]||0);if(d)return d;}return 0};
   async function checkForUpdate(){
     if(!navigator.onLine)return;
@@ -1014,17 +1014,37 @@ $('off').addEventListener('input',()=>{S.offManual=true});addEventListener('resi
       const remote=await response.json();
       if(!remote||!remote.version)return;
       latestVersion=String(remote.version);
-      if(compare(latestVersion,APP_VERSION)>0){
+      latestApkUrl=typeof remote.apkUrl==='string'?remote.apkUrl:'';
+      const newer=compare(latestVersion,APP_VERSION)>0;
+      if(newer){
         const label=notice&&notice.querySelector('span');
-        if(label)label.textContent='BaixoScore Pro '+latestVersion+' disponível. Atualize para carregar as melhorias.';
+        const nativeApk=!!(window.BaixoScoreAndroid&&latestApkUrl);
+        if(label)label.textContent='BaixoScore Pro '+latestVersion+' disponível. '+(nativeApk?'Baixe e instale a nova versão.':'Atualize para carregar as melhorias.');
         notice&&notice.classList.add('show');
       }else{notice&&notice.classList.remove('show');}
     }catch(error){/* Sem rede ou manifesto: manter o aplicativo utilizável. */}
   }
+  async function updateWebApp(){
+    try{
+      if('serviceWorker' in navigator){
+        const reg=await navigator.serviceWorker.getRegistration();
+        if(reg)await reg.update();
+        if(reg&&reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
+        await navigator.serviceWorker.ready;
+      }
+    }catch(error){/* O recarregamento com rede continua disponível. */}
+    const url=new URL(location.href);
+    url.searchParams.set('bs-update',latestVersion);
+    url.searchParams.set('refresh',String(Date.now()));
+    location.replace(url.href);
+  }
   if(updateBtn)updateBtn.addEventListener('click',()=>{
     if(!latestVersion)return;
-    const url=new URL(location.href);url.searchParams.set('bs-update',latestVersion);url.searchParams.set('refresh',String(Date.now()));
-    location.replace(url.href);
+    if(window.BaixoScoreAndroid&&latestApkUrl){
+      window.BaixoScoreAndroid.openApkUpdate(latestApkUrl);
+      return;
+    }
+    updateWebApp();
   });
   window.addEventListener('online',checkForUpdate);
   window.setTimeout(checkForUpdate,2200);
