@@ -45,11 +45,52 @@
     .foot a:hover{text-decoration:underline}
     .secure{display:flex;align-items:center;justify-content:center;gap:7px;color:#999485;font-size:11px;margin-top:17px}
     .secure svg{width:14px;height:14px;color:var(--gold2)}
+
+    .intro-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#10100e;opacity:0;visibility:hidden;transition:opacity .55s ease,visibility .55s ease}
+    .intro-splash.show{opacity:1;visibility:visible}
+    .intro-content{display:grid;justify-items:center;text-align:center;gap:12px;transform:translateY(10px) scale(.97);opacity:0;transition:transform .8s cubic-bezier(.2,.75,.25,1),opacity .8s ease}
+    .intro-splash.show .intro-content{transform:translateY(0) scale(1);opacity:1}
+    .intro-mark{width:clamp(112px,28vw,154px);height:clamp(112px,28vw,154px);object-fit:contain;filter:drop-shadow(0 0 18px #d5a92835)}
+    .intro-name{color:#f2d477;font:700 14px/1.2 Inter,system-ui,sans-serif;letter-spacing:.24em}
+    .intro-caption{color:#aaa697;font:11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.16em}
+    .intro-rule{width:54px;height:1px;background:#d5a928;transform:scaleX(0);transform-origin:center;transition:transform .7s ease .25s}
+    .intro-splash.show .intro-rule{transform:scaleX(1)}
+    .intro-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+    @media(prefers-reduced-motion:reduce){.intro-splash,.intro-content,.intro-rule{transition:none!important}}
+
     @media(max-width:420px){body{padding:18px}.brand{margin-bottom:19px}.mark{width:104px;height:104px}}
     @media(prefers-reduced-motion:reduce){*{transition:none!important}}
   </style>
 </head>
 <body>
+
+  <div class="intro-splash" id="introSplash" aria-hidden="true">
+    <div class="intro-content">
+      <img class="intro-mark" src="./logo-plataforma-dicas-de-musica.svg?v=20261123" alt="">
+      <div class="intro-name">CELSO MARTINS</div>
+      <div class="intro-rule"></div>
+      <div class="intro-caption">DICAS DE MÚSICA</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const splash = document.getElementById('introSplash');
+      let alreadyShown = false;
+      try {
+        alreadyShown = sessionStorage.getItem('cmPlatformIntro20261123') === '1';
+        if (!alreadyShown) sessionStorage.setItem('cmPlatformIntro20261123', '1');
+      } catch (_) {}
+      if (alreadyShown) { splash.remove(); return; }
+      requestAnimationFrame(() => splash.classList.add('show'));
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.setTimeout(() => {
+        splash.classList.add('hide');
+        window.setTimeout(() => splash.remove(), reduced ? 20 : 600);
+      }, reduced ? 650 : 1850);
+    })();
+  </script>
+
   <main class="shell">
     <header class="brand">
       <img class="mark" src="./logo-plataforma-dicas-de-musica.svg?v=20261123" alt="Logotipo oficial Celso Martins – Dicas de Música">
