@@ -8,6 +8,12 @@ on:
       - 'baixoscore-version.json'
       - 'android-baixoscore/**'
       - '.github/workflows/build-baixoscore-apk.yml'
+  pull_request:
+    paths:
+      - 'app-baixoscore-pro.html'
+      - 'baixoscore-version.json'
+      - 'android-baixoscore/**'
+      - '.github/workflows/build-baixoscore-apk.yml'
   workflow_dispatch:
 
 permissions:
@@ -52,6 +58,7 @@ jobs:
         run: cp android-baixoscore/app/build/outputs/apk/debug/app-debug.apk BaixoScore-Pro.apk
 
       - name: Publish versioned GitHub Release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
