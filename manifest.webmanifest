@@ -1,9 +1,9 @@
 {
-  "id": "./",
+  "id": "./app-baixoscore-pro.html",
   "name": "BaixoScore Pro",
   "short_name": "BaixoScore",
   "description": "Transcrição musical para contrabaixo",
-  "start_url": "./index.html",
+  "start_url": "./app-baixoscore-pro.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
