@@ -85,8 +85,9 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun openApkUpdate(url: String) {
             runOnUiThread {
-                val allowedPrefix = "https://github.com/celsomartins251/dicas-de-musica/releases/download/"
-                if (!url.startsWith(allowedPrefix) || !url.endsWith("/BaixoScore-Pro.apk")) {
+                val validReleaseUrl = url.startsWith("https://github.com/celsomartins251/dicas-de-musica/releases/download/") ||
+                    url.startsWith("https://github.com/celsomartins251/dicas-de-musica/releases/latest/download/")
+                if (!validReleaseUrl || !url.endsWith("/BaixoScore-Pro.apk")) {
                     Toast.makeText(this@MainActivity, "Endereço de atualização inválido.", Toast.LENGTH_LONG).show()
                     return@runOnUiThread
                 }
