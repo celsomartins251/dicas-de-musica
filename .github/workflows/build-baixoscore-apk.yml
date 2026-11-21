@@ -1,4 +1,4 @@
-name: Build BaixoScore Pro APK
+name: Build and publish BaixoScore Pro APK
 
 on:
   push:
@@ -8,13 +8,19 @@ on:
       - 'baixoscore-version.json'
       - 'android-baixoscore/**'
       - '.github/workflows/build-baixoscore-apk.yml'
+  pull_request:
+    paths:
+      - 'app-baixoscore-pro.html'
+      - 'baixoscore-version.json'
+      - 'android-baixoscore/**'
+      - '.github/workflows/build-baixoscore-apk.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -44,14 +50,32 @@ jobs:
           cp app-baixoscore-pro.html android-baixoscore/app/src/main/assets/index.html
           cp baixoscore-version.json android-baixoscore/app/src/main/assets/baixoscore-version.json
 
-      - name: Build debug APK
+      - name: Build APK
         working-directory: android-baixoscore
         run: gradle --no-daemon --stacktrace :app:assembleDebug
 
-      - name: Publish APK artifact
+      - name: Prepare release asset
+        run: cp android-baixoscore/app/build/outputs/apk/debug/app-debug.apk BaixoScore-Pro.apk
+
+      - name: Publish versioned GitHub Release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(jq -r '.version' baixoscore-version.json)"
+          TAG="baixoscore-v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" BaixoScore-Pro.apk --clobber
+          else
+            gh release create "$TAG" BaixoScore-Pro.apk \
+              --title "BaixoScore Pro ${VERSION}" \
+              --notes "Instalador Android do BaixoScore Pro ${VERSION}."
+          fi
+
+      - name: Keep APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: BaixoScore-Pro-Android-APK
-          path: android-baixoscore/app/build/outputs/apk/debug/app-debug.apk
+          path: BaixoScore-Pro.apk
           if-no-files-found: error
           retention-days: 30
