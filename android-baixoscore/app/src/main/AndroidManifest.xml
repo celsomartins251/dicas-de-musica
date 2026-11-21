@@ -4,6 +4,8 @@
     <application
         android:allowBackup="false"
         android:label="BAIXO SCORE PRO"
+        android:icon="@drawable/baixoscore_logo"
+        android:roundIcon="@drawable/baixoscore_logo"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
