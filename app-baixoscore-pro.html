@@ -254,7 +254,15 @@ input,select,textarea,progress{accent-color:#fff!important}
 #bsUpdateNotice.show{display:flex}
 #bsUpdateNotice button{flex:none;border:0;border-radius:8px;padding:9px 13px;background:#a78bca;color:#17111e;font-weight:800}
 @media(prefers-reduced-motion:reduce){#bootSplash .boot-logo,#bootSplash .boot-name,#bootSplash .boot-sub,#bootSplash .boot-rule:after{animation:none;opacity:1}#bootSplash{transition:none}}
-</style></head><body><div id="bootSplash" role="status" aria-label="Abrindo BaixoScore Pro"><div class="boot-inner"><img id="bootLogo" class="boot-logo" alt="Logotipo BaixoScore Pro"><div class="boot-name">BAIXOSCORE PRO</div><div class="boot-sub">Transcrição musical para contrabaixo</div><div class="boot-rule" aria-hidden="true"></div><div class="boot-status">Preparando ambiente de trabalho…</div></div></div>
+/* Splash de identidade visual: logotipo original roxo com clave de fá */
+#brandSplash{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:24px;background:radial-gradient(ellipse at center,rgba(91,42,170,.28),transparent 58%),#08051a;opacity:1;visibility:visible;transition:opacity .55s ease,visibility .55s ease}
+#brandSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+#brandSplash .splash-logo{display:block;width:min(62vw,250px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:50%;box-shadow:0 0 34px rgba(139,92,246,.42),0 0 90px rgba(124,58,237,.2);animation:brandLogoIn .85s cubic-bezier(.2,.8,.2,1) both}
+#brandSplash .splash-name{font-size:clamp(18px,4vw,24px);font-weight:800;letter-spacing:.18em;color:#e9d5ff;text-align:center;text-shadow:0 0 18px rgba(168,85,247,.55)}
+#brandSplash .splash-sub{font-size:11px;letter-spacing:.22em;color:#a78bfa;text-align:center;text-transform:uppercase}
+@keyframes brandLogoIn{from{opacity:0;transform:scale(.82);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+@media(prefers-reduced-motion:reduce){#brandSplash .splash-logo{animation:none}#brandSplash{transition:none}}</style></head><body>
+<div id="brandSplash" role="status" aria-label="BaixoScore Pro"><img id="brandSplashLogo" class="splash-logo" alt="Logotipo roxo do BaixoScore Pro com clave de fá"><div class="splash-name">BAIXO SCORE PRO</div><div class="splash-sub">Transcrição musical profissional</div></div><div id="bootSplash" role="status" aria-label="Abrindo BaixoScore Pro"><div class="boot-inner"><img id="bootLogo" class="boot-logo" alt="Logotipo BaixoScore Pro"><div class="boot-name">BAIXOSCORE PRO</div><div class="boot-sub">Transcrição musical para contrabaixo</div><div class="boot-rule" aria-hidden="true"></div><div class="boot-status">Preparando ambiente de trabalho…</div></div></div>
 <div id="bsUpdateNotice" role="status" aria-live="polite"><span>Uma nova versão do BaixoScore Pro está disponível.</span><button id="bsUpdateNow" type="button">Atualizar</button></div>
 
 <header><button id="menuToggle" type="button" aria-label="Abrir menu lateral" aria-expanded="false">☰</button><h1>♭ BaixoScore Pro</h1><small style="color:var(--mu)">Transcrição de contrabaixo + reconhecimento harmônico — processamento local no navegador</small></header>
@@ -974,7 +982,7 @@ $('off').addEventListener('input',()=>{S.offManual=true});addEventListener('resi
 <script>
 /* BaixoScore Pro — controle de versão e abertura. A checagem é opcional: o app abre offline. */
 (()=>{
-  const APP_VERSION='1.0.0';
+  const APP_VERSION='1.0.1';
   const VERSION_URL=new URL('baixoscore-version.json',location.href).href;
   const splash=document.getElementById('bootSplash');
   const logo=document.getElementById('bootLogo');
@@ -1012,5 +1020,8 @@ $('off').addEventListener('input',()=>{S.offManual=true});addEventListener('resi
   window.setTimeout(checkForUpdate,2200);
   window.setInterval(checkForUpdate,6*60*60*1000);
 })();
+</script>
+<script>
+(()=>{const splash=document.getElementById("brandSplash");const logo=document.getElementById("brandSplashLogo");const original=document.querySelector(".hero .brand-icon");if(original&&logo)logo.src=original.currentSrc||original.src;let closed=false;const close=()=>{if(closed||!splash)return;closed=true;splash.classList.add("is-hidden");window.setTimeout(()=>splash.remove(),650)};window.addEventListener("load",()=>window.setTimeout(close,1700),{once:true});window.setTimeout(close,4200)})();
 </script>
 </body></html>
