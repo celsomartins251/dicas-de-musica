@@ -16,10 +16,10 @@
   "theme_color": "#10100e",
   "icons": [
     {
-      "src": "./icons/app-icon.svg?v=20261113",
-      "sizes": "192x192 512x512",
+      "src": "./icons/platform-logo.svg?v=20261121",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
