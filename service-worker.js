@@ -1,20 +1,10 @@
-// Service worker mínimo: não armazena páginas autenticadas, credenciais ou dados do Firestore.
-const VERSION = "celso-martins-pwa-v2-20261112";
-
-self.addEventListener("install", event => {
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", event => {
-  event.waitUntil(self.clients.claim());
-});
-
-// Não interceptamos requisições: Firebase Auth e Firestore continuam usando a rede
-// normalmente, sem risco de servir dados privados ou sessões antigas pelo cache.
-
-
-// Handler de rede sem cache: atende ao ciclo PWA sem guardar páginas privadas.
-self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request));
+const CACHE='baixoscore-v1';
+const FILES=['./','./app-baixoscore-pro.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const u=new URL(e.request.url);
+  if(u.origin!==location.origin||u.pathname.endsWith('baixoscore-version.json'))return;
+  e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('./app-baixoscore-pro.html'))));
 });

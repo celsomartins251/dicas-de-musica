@@ -1,13 +1,1 @@
-{
-  "app": "BaixoScore Pro",
-  "version": "1.0.1",
-  "released": "2026-11-21",
-  "entry": "app-baixoscore-pro.html",
-  "update_policy": "Compare semantic version; app checks this manifest online at startup and every six hours. If offline, it continues working normally.",
-  "notes": [
-    "Tela de abertura com o logotipo roxo original e a clave de fá em destaque.",
-    "Abertura animada com o logotipo original do aplicativo.",
-    "Verificação de novas versões sem bloquear o uso offline.",
-    "Interface, ferramentas musicais e processamento existentes preservados."
-  ]
-}
+{"version":"1.0.0"}
