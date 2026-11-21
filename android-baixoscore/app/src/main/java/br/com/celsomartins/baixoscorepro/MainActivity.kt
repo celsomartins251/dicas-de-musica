@@ -24,6 +24,7 @@ class MainActivity : Activity() {
     private var downloadId: Long = -1L
     private var pendingApkUri: Uri? = null
     private var receiverRegistered = false
+    private var awaitingInstallPermission = false
 
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -109,12 +110,15 @@ class MainActivity : Activity() {
     private fun installDownloadedApkIfAllowed() {
         val apkUri = pendingApkUri ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
-            Toast.makeText(this, "Autorize a instalação de apps desta fonte para concluir a atualização.", Toast.LENGTH_LONG).show()
-            val settingsIntent = Intent(
-                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(settingsIntent)
+            if (!awaitingInstallPermission) {
+                awaitingInstallPermission = true
+                Toast.makeText(this, "Autorize a instalação de apps desta fonte para concluir a atualização.", Toast.LENGTH_LONG).show()
+                val settingsIntent = Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(settingsIntent)
+            }
             return
         }
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
@@ -132,7 +136,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (pendingApkUri != null) installDownloadedApkIfAllowed()
+        if (pendingApkUri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && packageManager.canRequestPackageInstalls()) {
+            awaitingInstallPermission = false
+            installDownloadedApkIfAllowed()
+        }
     }
 
     @Deprecated("Deprecated in Android API")
