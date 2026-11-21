@@ -11,7 +11,7 @@ body{margin:0;color:var(--tx);font:15px/1.5 -apple-system,BlinkMacSystemFont,"In
 @media(prefers-reduced-motion:reduce){body{animation:none}html{scroll-behavior:auto}}
 header{padding:18px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:rgba(10,7,32,.55);backdrop-filter:blur(16px);border-bottom:1px solid var(--bd);position:relative;z-index:5}
 h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.3px;color:#fff;display:flex;align-items:center;gap:12px}
-h1::before{content:"";width:38px;height:38px;border-radius:22%;background:url('./logo-plataforma-dicas-de-musica.svg?v=20261121') center/contain no-repeat;box-shadow:none;flex:none}
+h1::before{content:"";width:38px;height:38px;border-radius:22%;background:url('./logo-plataforma-dicas-de-musica.svg') center/contain no-repeat;box-shadow:none;flex:none}
 header small{font-size:12.5px;color:var(--mu)!important}
 h2{margin:0 0 16px;font-size:13.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#fff;display:flex;align-items:center;gap:10px}
 h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 12px var(--mg)}
@@ -268,10 +268,10 @@ input,select,textarea,progress{accent-color:#fff!important}
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BaixoScore Pro">
 <link rel="manifest" href="baixoscore-manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" href="apple-touch-icon.png">
-<link rel="icon" type="image/svg+xml" href="./logo-plataforma-dicas-de-musica.svg?v=20261121">
-<link rel="apple-touch-icon" href="./logo-plataforma-dicas-de-musica.svg?v=20261121">
+<link rel="icon" type="image/svg+xml" href="./logo-plataforma-dicas-de-musica.svg">
+
+
+<link rel="apple-touch-icon" href="./logo-plataforma-dicas-de-musica.svg">
 </head><body><div id="bootSplash" role="status" aria-label="Abrindo BaixoScore Pro"><div class="boot-inner"><div class="boot-logo-wrap"><img id="bootLogo" class="boot-logo" alt="Logo oficial Dicas de Música — Celso Martins"></div><div class="boot-name">BAIXOSCORE PRO</div><div class="boot-sub">Transcrição musical para contrabaixo</div><div class="boot-rule" aria-hidden="true"></div><div class="boot-status">Preparando ambiente de trabalho…</div></div></div>
 <div id="bsUpdateNotice" role="status" aria-live="polite"><span>Uma nova versão do BaixoScore Pro está disponível.</span><button id="bsUpdateNow" type="button">Atualizar</button></div>
 
@@ -342,7 +342,7 @@ input,select,textarea,progress{accent-color:#fff!important}
 <small>Ligadura liga a nota à próxima nota. Appoggiatura: selecione a nota ornamental e ative o botão; ela será escrita menor, antes da resolução.</small></section>
 </div></aside>
 <main>
-<div class="hero"><div><b>Olá, Baixista!</b><span>Pronto para transcrever sua próxima linha de baixo?</span></div><img class="brand-icon" alt="Logo oficial Dicas de Música — Celso Martins" src="./logo-plataforma-dicas-de-musica.svg?v=20261121"></div>
+<div class="hero"><div><b>Olá, Baixista!</b><span>Pronto para transcrever sua próxima linha de baixo?</span></div><img class="brand-icon" alt="Logo oficial Dicas de Música — Celso Martins" src="./logo-plataforma-dicas-de-musica.svg"></div>
 <section id="secImport"><h2>1. Importar áudio</h2>
 <div class="row"><label class="btn p">Importar MP3 / WAV / MIDI<input id="file" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.mid,.midi" hidden></label><span id="info" style="color:var(--mu)">Nenhum arquivo.</span></div>
 <canvas id="wave" height="140"></canvas>
